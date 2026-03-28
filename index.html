@@ -4,8 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Travel Explorer</title>
+<!-- Preconnect to CDNs for faster resource loading -->
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Non-blocking font loading (swap instead of @import block) -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;600&display=swap" media="print" onload="this.media='all'">
+<!-- Preload the heavy globe.gl script -->
+<link rel="preload" href="https://unpkg.com/globe.gl@2.33.0" as="script">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
   :root {
     --bg: #05050a;
@@ -62,6 +69,15 @@
   #globe-container {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     z-index: 0;
+    background:
+      radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1px 1px at 40% 80%, rgba(255,255,255,0.3), transparent),
+      radial-gradient(1px 1px at 70% 10%, rgba(200,200,255,0.35), transparent),
+      radial-gradient(1px 1px at 90% 60%, rgba(255,255,255,0.25), transparent),
+      radial-gradient(1px 1px at 25% 55%, rgba(255,255,255,0.3), transparent),
+      radial-gradient(1px 1px at 55% 35%, rgba(200,210,255,0.3), transparent),
+      radial-gradient(1px 1px at 80% 90%, rgba(255,255,255,0.2), transparent),
+      radial-gradient(ellipse at 50% 50%, #08081a 40%, #05050a 100%);
   }
   /* HTML city labels on globe */
   .globe-label {
@@ -365,7 +381,13 @@
 
 <!-- GLOBE VIEW -->
 <div class="view-panel active" id="view-globe">
-  <div id="globe-container"></div>
+  <div id="globe-container">
+    <div id="loading" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;pointer-events:none;">
+      <div style="width:40px;height:40px;border:3px solid rgba(99,102,241,0.15);border-top-color:rgba(129,140,248,0.8);border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+      <div style="margin-top:14px;font-size:12px;color:var(--text-muted);letter-spacing:0.06em;">Loading globe...</div>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+  </div>
   <div class="trip-panel" id="trip-panel">
     <div class="trip-panel-header"><h2>Trips</h2></div>
     <div class="trip-panel-body" id="trip-list"></div>
@@ -756,7 +778,7 @@ const globe = Globe()
   // Vector globe — no raster texture, pure polygon surface
   .globeImageUrl('')
   .backgroundColor('#05050a')
-  .backgroundImageUrl('https://unpkg.com/three-globe@2.33.0/example/img/night-sky.png')
+  .backgroundImageUrl('') // CSS starfield instead of 900KB PNG
   .showAtmosphere(true)
   .atmosphereColor('#4455dd')
   .atmosphereAltitude(0.15)
@@ -774,7 +796,7 @@ const globe = Globe()
     const dist = Math.sqrt(dlat*dlat + dlng*dlng);
     return Math.min(0.45, Math.max(0.06, dist * 0.004));
   })
-  .arcCurveResolution(128)
+  .arcCurveResolution(64)
   .arcLabel(d => '')
   .onArcHover(handleArcHover)
   .onArcClick(d => { if(d) selectTrip(d.tripId); })
@@ -859,6 +881,12 @@ const globe = Globe()
 // Initial camera — Asia-centric
 globe.pointOfView({ lat: 25, lng: 85, altitude: 2.2 }, 0);
 
+// Hide loading spinner once WebGL scene is ready
+requestAnimationFrame(() => {
+  const el = document.getElementById('loading');
+  if (el) { el.style.opacity = '0'; el.style.transition = 'opacity 0.5s'; setTimeout(() => el.remove(), 600); }
+});
+
 // Renderer
 const renderer = globe.renderer();
 renderer.setPixelRatio(window.devicePixelRatio);
@@ -909,7 +937,7 @@ globeMaterial.emissiveIntensity = 0.3;
 globeMaterial.shininess = 0;
 
 // Load country polygons (all countries for vector surface)
-fetch('https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson')
+fetch('https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_admin_0_countries.geojson')
   .then(r => r.json())
   .then(geo => {
     countriesGeo = geo;
@@ -921,7 +949,7 @@ fetch('https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_c
 // ============================================================================
 const tooltip = document.getElementById('tooltip');
 let lastMouseX = 0, lastMouseY = 0;
-document.addEventListener('mousemove', e => { lastMouseX=e.clientX; lastMouseY=e.clientY; });
+document.addEventListener('mousemove', e => { lastMouseX=e.clientX; lastMouseY=e.clientY; }, { passive: true });
 
 function positionTooltip() {
   const tw = tooltip.offsetWidth||280, th = tooltip.offsetHeight||100;
