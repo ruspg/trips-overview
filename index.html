@@ -733,6 +733,19 @@ function labelsForAltitude(pts, alt) {
 }
 
 // ============================================================================
+// COLOR HELPERS
+// ============================================================================
+function lightenColor(hex, amount) {
+  // Lighten a hex color by amount (0-100)
+  hex = hex.replace('#','');
+  if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+  const r = Math.min(255, parseInt(hex.slice(0,2),16) + amount);
+  const g = Math.min(255, parseInt(hex.slice(2,4),16) + amount);
+  const b = Math.min(255, parseInt(hex.slice(4,6),16) + amount);
+  return '#' + [r,g,b].map(c => c.toString(16).padStart(2,'0')).join('');
+}
+
+// ============================================================================
 // 3D GLOBE (Globe.gl)
 // ============================================================================
 let selectedTrip = null;
@@ -747,30 +760,39 @@ const globe = Globe()
   .showAtmosphere(true)
   .atmosphereColor('#4455dd')
   .atmosphereAltitude(0.15)
-  // Arcs (flights) — thin elegant lines with slow flowing dash
+  // Arcs (flights) — gradient lines with gentle flowing animation
   .arcsData(buildArcs())
-  .arcColor('color')
-  .arcStroke(0.45)
-  .arcDashLength(0.6)
-  .arcDashGap(0.25)
-  .arcDashAnimateTime(4000) // slow flowing dash — shows direction
-  .arcAltitudeAutoScale(0.3)
+  .arcColor(d => [d.color, lightenColor(d.color, 40)])  // gradient: trip color → lighter
+  .arcStroke(0.55)
+  .arcDashLength(0.9)
+  .arcDashGap(0.15)
+  .arcDashAnimateTime(3000) // smooth directional flow
+  .arcAltitude(d => {
+    // Higher arcs for longer distances, graceful curve
+    const dlat = Math.abs(d.startLat - d.endLat);
+    const dlng = Math.abs(d.startLng - d.endLng);
+    const dist = Math.sqrt(dlat*dlat + dlng*dlng);
+    return Math.min(0.45, Math.max(0.06, dist * 0.004));
+  })
+  .arcCurveResolution(128)
   .arcLabel(d => '')
   .onArcHover(handleArcHover)
   .onArcClick(d => { if(d) selectTrip(d.tripId); })
-  // Surface paths (ground/water transport)
+  .arcsTransitionDuration(800)
+  // Surface paths (ground/water transport) — thin dotted, hugging surface
   .pathsData(buildPaths())
   .pathPoints('coords')
   .pathPointLat('lat')
   .pathPointLng('lng')
-  .pathColor('color')
-  .pathStroke(1.2)
-  .pathDashLength(0.3)
-  .pathDashGap(0.15)
-  .pathDashAnimateTime(6000)  // slower dash for surface
+  .pathColor(d => [d.color, lightenColor(d.color.replace('aa',''), 30) + 'cc'])
+  .pathStroke(1.5)
+  .pathDashLength(0.2)
+  .pathDashGap(0.1)
+  .pathDashAnimateTime(5000)
   .pathLabel(d => '')
   .onPathHover(handlePathHover)
   .onPathClick(d => { if(d) selectTrip(d.tripId); })
+  .pathTransitionDuration(800)
   // Points (cities)
   .pointsData(allPoints)
   .pointLat('lat')
@@ -872,8 +894,8 @@ function checkLOD() {
   const pointScale = alt < 0.6 ? 2.0 : alt < 1.0 ? 1.5 : alt < 1.5 ? 1.2 : 1.0;
   globe.pointRadius(d => d.size * pointScale);
   if (!selectedTrip) {
-    globe.arcStroke(alt < 0.8 ? 0.7 : 0.45);
-    globe.pathStroke(alt < 0.8 ? 2.0 : 1.2);
+    globe.arcStroke(alt < 0.8 ? 0.85 : 0.55);
+    globe.pathStroke(alt < 0.8 ? 2.5 : 1.5);
   }
 }
 // Poll at 4Hz instead of every frame — sufficient for smooth LOD, much less overhead
@@ -928,10 +950,15 @@ function handlePointHover(point) {
   `);
 }
 
+const defaultArcColor = d => [d.color, lightenColor(d.color, 40)];
+const dimArcColor = (d, ref) => d === ref
+  ? [ref.color, lightenColor(ref.color, 60)]
+  : [ref.color + '15', ref.color + '08'];
+
 function handleArcHover(arc) {
   if (!arc) {
     hideTooltip();
-    globe.arcStroke(0.45).arcColor('color');
+    globe.arcStroke(0.55).arcColor(defaultArcColor);
     return;
   }
   showTooltip(`
@@ -945,8 +972,8 @@ function handleArcHover(arc) {
     <div class="tt-sub" style="margin-top:4px;opacity:0.5">${arc.tripTitle}</div>
   `);
   globe
-    .arcStroke(d => d === arc ? 1.4 : 0.15)
-    .arcColor(d => d === arc ? arc.color : arc.color + '25');
+    .arcStroke(d => d === arc ? 1.6 : 0.15)
+    .arcColor(d => dimArcColor(d, arc));
 }
 
 function handlePathHover(path) {
@@ -1033,15 +1060,16 @@ function renderTripList() {
     el.addEventListener('click', () => selectTrip(el.dataset.id));
     el.addEventListener('mouseenter', () => {
       if (!selectedTrip) {
-        globe.arcStroke(d => d.tripId===el.dataset.id ? 0.9 : 0.1)
-             .arcColor(d => d.tripId===el.dataset.id ? d.color : d.color+'18')
-             .pathStroke(d => d.tripId===el.dataset.id ? 2 : 0.4)
-             .pathColor(d => d.tripId===el.dataset.id ? d.color : d.color.replace('aa','18'));
+        const tid = el.dataset.id;
+        globe.arcStroke(d => d.tripId===tid ? 1.0 : 0.08)
+             .arcColor(d => d.tripId===tid ? [d.color, lightenColor(d.color,50)] : [d.color+'10', d.color+'05'])
+             .pathStroke(d => d.tripId===tid ? 2.5 : 0.3)
+             .pathColor(d => d.tripId===tid ? d.color : d.color.replace('aa','10'));
       }
     });
     el.addEventListener('mouseleave', () => {
       if (!selectedTrip) {
-        globe.arcStroke(0.45).arcColor('color').pathStroke(1.2).pathColor('color');
+        globe.arcStroke(0.55).arcColor(defaultArcColor).pathStroke(1.5).pathColor('color');
       }
     });
   });
@@ -1061,7 +1089,7 @@ function selectTrip(id) {
     allPoints = buildPoints();
     globe.arcsData(buildArcs()).pathsData(buildPaths())
          .pointsData(allPoints).htmlElementsData(labelsForAltitude(allPoints, currentAltitude))
-         .arcStroke(0.45).arcColor('color').pathStroke(1.2).pathColor('color');
+         .arcStroke(0.55).arcColor(defaultArcColor).pathStroke(1.5).pathColor('color');
     globe.pointOfView({ lat:25, lng:85, altitude:2.2 }, 1500);
     closeTripDetail();
     return;
@@ -1072,7 +1100,7 @@ function selectTrip(id) {
   // When zooming into a trip, show all labels (no LOD filter)
   globe.arcsData(buildArcs(id)).pathsData(buildPaths(id))
        .pointsData(tripPts).htmlElementsData(tripPts)
-       .arcStroke(0.55).arcColor('color').pathStroke(1.2).pathColor('color');
+       .arcStroke(0.65).arcColor(defaultArcColor).pathStroke(1.5).pathColor('color');
 
   // Fly to trip — focus on destination cities, not Moscow (unless Russia trip)
   const trip = TRIPS.find(t=>t.id===id);
