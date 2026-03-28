@@ -1,0 +1,1040 @@
+# ============================================================================
+# TRAVEL DATABASE — Structure & Rules
+# ============================================================================
+#
+# RULES:
+#   1. DATES:       ISO 8601 format: YYYY-MM-DD
+#   2. TIMES:       24h with timezone: "HH:MM +TZ"
+#   3. PRICES:      amount + currency as separate fields
+#   4. AIRPORTS:    IATA 3-letter codes (SVO, BKK, HAN, etc.)
+#   5. TRIP ID:     Slug: "YYYY-MM-country"
+#   6. OPTIONAL:    Omit the key if no data (don't use null/empty)
+#   7. NOTES:       Free-form text for extras
+#   8. NO PII:      No names, passports, phones, emails, or booking IDs
+#
+# ============================================================================
+
+travelers:
+  - id: traveler_1
+  - id: traveler_2
+
+# ============================================================================
+# TRIPS (chronological)
+# ============================================================================
+
+trips:
+
+  # --- THAILAND / KOREA / CHINA — Dec 2022 – Apr 2023 (long stay) ----------
+  - id: "2022-12-asia"
+    title: "Phuket → Bangkok → Seoul → Phuket → Chengdu → Moscow"
+    countries: [Thailand, South Korea, China]
+    cities: [Phuket, Bangkok, Seoul, Chengdu]
+    date_start: 2022-12-18
+    date_end: 2023-04-29
+    travelers: [traveler_1, traveler_2]
+    notes: >
+      Long stay (~4.5 months). Phuket base: Karon Hotel first 5 nights,
+      then Title V Rawai on contract. Short trip to Bangkok, day trip
+      to Phi Phi, 2-week Seoul trip (Mar 9-22), return to Phuket,
+      then home via Chengdu (1 day in city).
+
+    flights:
+      - direction: outbound
+        leg: "Moscow → Phuket"
+        airline: Aeroflot
+        flight_number: SU-276
+        aircraft: Boeing 777-300ER
+        departure:
+          airport: SVO
+          city: Moscow
+          date: 2022-12-18
+          time: "00:15 +03:00"
+        arrival:
+          airport: HKT
+          city: Phuket
+          date: 2022-12-18
+          time: "13:30 +07:00"
+        class: Economy
+        baggage: "1 piece up to 23 kg"
+        price:
+          amount: 57754.00
+          currency: RUB
+          per: person
+
+      - direction: segment
+        leg: "Phuket → Seoul"
+        departure:
+          city: Phuket
+          date: 2023-03-09
+        arrival:
+          city: Seoul
+          date: 2023-03-09
+        notes: "Exact flight details not available"
+
+      - direction: segment
+        leg: "Seoul → Phuket"
+        departure:
+          city: Seoul
+          date: 2023-03-22
+        arrival:
+          city: Phuket
+          date: 2023-03-22
+        notes: "Exact flight details not available"
+
+      - direction: return
+        leg: "Phuket → Chengdu → Moscow"
+        departure:
+          city: Phuket
+          date: 2023-04-28
+        arrival:
+          city: Moscow
+          date: 2023-04-29
+        notes: "Via Chengdu with 1 day in city"
+
+    hotels:
+      - name: "Karon Hotel"
+        city: Phuket
+        check_in: 2022-12-18
+        nights: 5
+        notes: "First accommodation on arrival"
+
+      - name: "The Title V"
+        city: "Rawai, Phuket"
+        check_in: 2022-12-23
+        notes: "Long-term contract stay until departure"
+
+      - name: "Hotel in Chengdu"
+        city: Chengdu
+        check_in: 2023-04-28
+        check_out: 2023-04-29
+        nights: 1
+        notes: "Only a booking image survives"
+
+    tours:
+      - name: "Phi Phi Islands boat tour"
+        provider: Phuket Tropic Tours
+        provider_url: "https://phuket-tropic-tours.ru"
+        date: 2023-02-19
+        program: "Phi Phi + Maya Bay + Bamboo Island | comfort+"
+        pickup_hotel: "The Title V (Rawai-Phuket)"
+        transfer: Rawai
+        guide: "Russian guide"
+        boat: "Speed boat 4 motors"
+        price:
+          amount: 4400
+          currency: THB
+          for_all: true
+
+      - name: "Bangkok city tour (mini-group)"
+        provider: Tripster
+        provider_url: "https://tripster.ru"
+        date: 2023-02-23
+        time_start: "11:00"
+        duration: "11 hours"
+        meeting_point: "King Power Mahanakhon skyscraper"
+        price:
+          amount: 220
+          currency: USD
+          for_all: true
+        payment:
+          prepaid: 44
+          remaining: 176
+          currency: USD
+        notes: "Includes transfer, sightseeing, and river cruise"
+
+  # --- GRAND ASIA TRIP — April–June 2024 (Japan→Vietnam→Korea→China) -------
+  - id: "2024-04-grand-asia"
+    title: "Japan → Vietnam → Korea → China — Grand Asia Trip"
+    countries: [Japan, Vietnam, South Korea, China]
+    cities:
+      - Osaka
+      - Kyoto
+      - Kobe
+      - Tokyo
+      - Ho Chi Minh City
+      - Nha Trang
+      - Seoul
+      - Hanoi
+      - Chengdu
+    date_start: 2024-04-20
+    date_end: 2024-06-29
+    travelers: [traveler_1, traveler_2]
+
+    flights:
+      - direction: outbound
+        leg: "Moscow → Osaka (via Hangzhou)"
+        segments:
+          - airline: Beijing Capital Airlines
+            flight_number: JD-608
+            aircraft: Airbus A330-200
+            departure:
+              airport: SVO
+              city: Moscow
+              terminal: C
+              date: 2024-04-20
+              time: "22:15"
+            arrival:
+              airport: HGH
+              city: Hangzhou
+              terminal: 4
+              date: 2024-04-21
+              time: "11:50"
+            baggage: "Carry-on 7 kg × 2, Luggage 23 kg × 2"
+
+          - airline: Beijing Capital Airlines
+            flight_number: JD-365
+            aircraft: Airbus A320
+            departure:
+              airport: HGH
+              city: Hangzhou
+              terminal: 4
+              date: 2024-04-21
+              time: "15:20"
+            arrival:
+              airport: KIX
+              city: Osaka
+              terminal: 1
+              date: 2024-04-21
+              time: "19:00"
+        notes: "Transfer in Hangzhou ~3.5 hours"
+        price:
+          amount: 33591
+          currency: RUB
+          per: person
+
+      - direction: segment
+        leg: "Tokyo → Ho Chi Minh City"
+        airline: VietJetAir
+        flight_number: VJ-823
+        aircraft: Airbus A330
+        departure:
+          airport: NRT
+          city: Tokyo (Narita)
+          date: 2024-05-11
+          time: "08:55"
+        arrival:
+          airport: SGN
+          city: Ho Chi Minh City
+          date: 2024-05-11
+          time: "12:55"
+        baggage: "Carry-on 7 kg × 2, Luggage 20 kg × 2"
+
+      - direction: segment
+        leg: "Ho Chi Minh → Nha Trang"
+        airline: VietJetAir
+        flight_number: VJ-604
+        departure:
+          airport: SGN
+          city: Ho Chi Minh City
+          date: 2024-05-18
+          time: "14:25 +07:00"
+        arrival:
+          airport: CXR
+          city: Nha Trang
+          date: 2024-05-18
+          time: "15:25 +07:00"
+        class: Economy
+        baggage: "20 kg"
+        price:
+          amount: 9695.99
+          currency: RUB
+          per: person
+
+      - direction: segment
+        leg: "Nha Trang → Seoul"
+        airline: Jeju Air
+        departure:
+          airport: CXR
+          city: Nha Trang
+          date: 2024-06-12
+        arrival:
+          airport: ICN
+          city: Seoul
+          date: 2024-06-12
+        price:
+          amount: 13112.35
+          currency: RUB
+          per: person
+
+      - direction: segment
+        leg: "Seoul → Nha Trang"
+        airline: VietJetAir
+        departure:
+          airport: ICN
+          city: Seoul
+          date: 2024-06-19
+        arrival:
+          airport: CXR
+          city: Nha Trang
+          date: 2024-06-19
+        price:
+          amount: 11948.32
+          currency: RUB
+          per: person
+
+      - direction: segment
+        leg: "Nha Trang → Hanoi"
+        airline: VietJetAir
+        departure:
+          airport: CXR
+          city: Nha Trang
+          date: 2024-06-22
+        arrival:
+          airport: HAN
+          city: Hanoi
+          date: 2024-06-22
+        price:
+          amount: 12830.40
+          currency: RUB
+          per: person
+
+      - direction: segment
+        leg: "Hanoi → Nha Trang"
+        airline: VietJetAir
+        departure:
+          airport: HAN
+          city: Hanoi
+          date: 2024-06-25
+        arrival:
+          airport: CXR
+          city: Nha Trang
+          date: 2024-06-25
+        price:
+          amount: 11659.71
+          currency: RUB
+          per: person
+
+      - direction: return
+        leg: "Nha Trang → Chengdu → Moscow"
+        airline: Sichuan Airlines
+        departure:
+          airport: CXR
+          city: Nha Trang
+          date: 2024-06-28
+        arrival:
+          airport: SVO
+          city: Moscow
+          date: 2024-06-29
+        class: Business
+        price:
+          amount: 85835.96
+          currency: RUB
+          per: person
+
+    hotels:
+      # Japan leg
+      - name: "Fairfield by Marriott Osaka Namba"
+        city: Osaka
+        check_in: 2024-04-21
+        check_out: 2024-04-26
+        nights: 5
+
+      - name: "Mitsui Garden Hotel Kyoto Sanjo"
+        city: Kyoto
+        check_in: 2024-04-26
+        check_out: 2024-04-30
+        nights: 4
+
+      - name: "Negiya Ryofukaku"
+        city: Kobe
+        check_in: 2024-04-30
+        check_out: 2024-05-02
+        nights: 2
+
+      - name: "Sotetsu Fresa Inn Tokyo-Kanda"
+        city: Tokyo
+        check_in: 2024-05-02
+        check_out: 2024-05-05
+        nights: 3
+
+      - name: "Koko Hotel Premier Nihonbashi Hamacho"
+        city: Tokyo
+        check_in: 2024-05-05
+        check_out: 2024-05-11
+        nights: 6
+
+      # Vietnam leg
+      - name: "DHTS Business Hotel & Apartment"
+        city: Ho Chi Minh City
+        check_in: 2024-05-11
+        check_out: 2024-05-18
+        nights: 7
+
+      - name: "Diamond Bay Condotel"
+        city: Nha Trang
+        check_in: 2024-05-18
+        check_out: 2024-05-25
+        nights: 7
+
+      - name: "Balcony Nha Trang Hotel"
+        city: Nha Trang
+        check_in: 2024-05-25
+        check_out: 2024-05-26
+        nights: 1
+
+      - name: "Nomad Apartment"
+        city: Nha Trang
+        check_in: 2024-05-26
+        check_out: 2024-06-02
+        nights: 7
+
+      - name: "Diamond Bay Condotel"
+        city: Nha Trang
+        check_in: 2024-06-01
+        check_out: 2024-06-03
+        nights: 2
+
+      - name: "Accommodation in Nha Trang"
+        city: Nha Trang
+        check_in: 2024-06-03
+        check_out: 2024-06-12
+        nights: 9
+        notes: "No booking documents available"
+
+      # Korea leg
+      - name: "L7 Hongdae by Lotte"
+        city: Seoul
+        check_in: 2024-06-12
+        check_out: 2024-06-19
+        nights: 7
+
+      # Vietnam return leg
+      - name: "Accommodation in Nha Trang"
+        city: Nha Trang
+        check_in: 2024-06-19
+        check_out: 2024-06-22
+        nights: 3
+        notes: "No booking documents available"
+
+      - name: "Diamond Bay Condotel"
+        city: Nha Trang
+        check_in: 2024-06-25
+        check_out: 2024-06-28
+        nights: 3
+
+      - name: "Hanoi Central Hotel & Residences"
+        city: Hanoi
+        check_in: 2024-06-22
+        check_out: 2024-06-25
+        nights: 3
+
+  # --- RUSSIA — August 2024 (Mineralnye Vody & Budennovsk) -----------------
+  - id: "2024-08-mineralnye-vody"
+    title: "Mineralnye Vody & Budennovsk, Russia"
+    country: Russia
+    cities: [Mineralnye Vody, Budennovsk]
+    date_start: 2024-08-30
+    date_end: 2024-09-01
+    travelers: [traveler_1, traveler_2]
+
+    flights:
+      - direction: outbound
+        airline: Aeroflot
+        flight_number: SU-1304
+        departure:
+          airport: SVO
+          city: Moscow
+          terminal: B
+          date: 2024-08-30
+          time: "08:35 +03:00"
+        arrival:
+          airport: MRV
+          city: Mineralnye Vody
+          date: 2024-08-30
+          time: "11:35 +03:00"
+        class: Economy
+        baggage: "Hand luggage only, 10 kg"
+        seat: 12E
+        price:
+          amount: 8289.05
+          currency: RUB
+          per: person
+
+      - direction: outbound
+        airline: Pobeda
+        flight_number: DP-6911
+        departure:
+          airport: SVO
+          city: Moscow
+          terminal: D
+          date: 2024-08-30
+          time: "07:50 +03:00"
+        arrival:
+          airport: MRV
+          city: Mineralnye Vody
+          date: 2024-08-30
+          time: "11:15 +03:00"
+        class: Economy
+        baggage: "Hand luggage only (36x30x27cm)"
+        price:
+          amount: 5774
+          currency: RUB
+          per: person
+        notes: "Alternative outbound flight (same day, different airline)"
+
+      - direction: return
+        airline: Ural Airlines
+        flight_number: U6-348
+        departure:
+          airport: MRV
+          city: Mineralnye Vody
+          date: 2024-09-01
+          time: "18:40 +03:00"
+        arrival:
+          airport: DME
+          city: Moscow (Domodedovo)
+          date: 2024-09-01
+          time: "21:40 +03:00"
+        class: Economy
+        baggage: "Hand luggage only, 10 kg"
+        price:
+          amount: 11686
+          currency: RUB
+          per: person
+
+    transport:
+      - type: car
+        route: "Mineralnye Vody → Budennovsk"
+        notes: "Drive to Budennovsk and back"
+
+    hotels:
+      - name: "Stary Gorod"
+        city: Budennovsk
+        notes: "Старый Город"
+
+  # --- JAPAN — April–May 2025 (Okinawa, Sapporo, Hokkaido, Tokyo) ----------
+  - id: "2025-04-japan"
+    title: "Okinawa, Sapporo, Hokkaido & Tokyo, Japan"
+    country: Japan
+    cities: [Okinawa, Sapporo, Lake Toya, Tokyo, Shanghai]
+    date_start: 2025-04-29
+    date_end: 2025-05-12
+    travelers: [traveler_1, traveler_2]
+
+    flights:
+      - direction: outbound
+        leg: "Moscow → Shanghai → Tokyo → Shanghai → Okinawa"
+        airline: China Eastern
+        departure:
+          airport: SVO
+          city: Moscow
+          date: 2025-04-29
+        arrival:
+          airport: OKA
+          city: Okinawa
+          date: 2025-04-29
+        notes: "Multi-segment via Shanghai Pudong (PVG) and Tokyo Haneda (HND)"
+        price:
+          amount: 97021.00
+          currency: RUB
+          per: person
+
+      - direction: segment
+        leg: "Okinawa → Sapporo"
+        airline: Peach Aviation
+        departure:
+          airport: OKA
+          city: Okinawa
+          date: 2025-05-03
+          time: "12:45"
+        arrival:
+          airport: CTS
+          city: Sapporo
+          date: 2025-05-03
+          time: "16:05"
+        price:
+          amount: 24461.00
+          currency: RUB
+          per: person
+
+      - direction: segment
+        leg: "Sapporo → Tokyo"
+        airline: AirDo
+        departure:
+          airport: CTS
+          city: Sapporo
+          date: 2025-05-07
+        arrival:
+          airport: HND
+          city: Tokyo
+          date: 2025-05-07
+        price:
+          amount: 10248.00
+          currency: RUB
+          per: person
+
+      - direction: return
+        leg: "Tokyo → Shanghai → Moscow"
+        departure:
+          airport: HND
+          city: Tokyo
+          date: 2025-05-11
+        arrival:
+          airport: SVO
+          city: Moscow
+          date: 2025-05-12
+        notes: "Transit in Shanghai, overnight at Ramada Plaza Shanghai Pudong Airport"
+
+    hotels:
+      - name: "Southwest Grand Hotel"
+        city: Okinawa
+        check_in: 2025-04-30
+        check_in_time: "15:00–22:00"
+        check_out: 2025-05-03
+        check_out_time: "12:00"
+        room_type: "Grand Twin (45 m²)"
+        meals: "Buffet breakfast on May 3 (special rate 8,000 JPY)"
+        price:
+          amount: 99000
+          currency: JPY
+          breakdown:
+            - date: 2025-04-30
+              amount: 25000
+            - date: 2025-05-01
+              amount: 30000
+            - date: 2025-05-02
+              amount: 36000
+        payment_method: "Pay at hotel"
+        cancellation:
+          free_until: 2025-04-22
+          penalties:
+            - from: 2025-04-23
+              amount: 19800
+            - from: 2025-04-27
+              amount: 49500
+            - on_checkin_day: 99000
+
+      - name: "The Royal Park Canvas Sapporo Odori Park"
+        city: Sapporo
+        check_in: 2025-05-03
+        check_out: 2025-05-05
+        nights: 2
+        price:
+          amount: 33298.55
+          currency: RUB
+
+      - name: "The Lake View Toya Nonokaze Resort"
+        city: "Toya, Hokkaido"
+        check_in: 2025-05-05
+        check_out: 2025-05-07
+        nights: 2
+        extras: "Fireworks viewing included"
+        price:
+          amount: 183480
+          currency: JPY
+
+      - name: "Hotel Graphy Shibuya"
+        city: Tokyo
+        check_in: 2025-05-07
+        check_out: 2025-05-11
+        nights: 4
+        meals: "Breakfast included"
+        price:
+          amount: 124921
+          currency: JPY
+
+      - name: "Ramada Plaza Shanghai Pudong Airport"
+        city: Shanghai
+        check_in: 2025-05-11
+        check_out: 2025-05-12
+        nights: 1
+        notes: "Transit hotel"
+
+    activities:
+      - name: "Okinawa Churaumi Aquarium"
+        date: 2025-05-01
+        valid_until: 2025-05-31
+        location: "Motobu Cho, Okinawa"
+
+      - name: "Tokashiki Island ferry"
+        date: 2025-05-01
+        location: "Naha ↔ Tokashiki, Okinawa"
+        notes: "Marine Liner Tokashiki (high-speed) or Ferry Tokashiki (slow). Timetable for May 2025."
+
+      - name: "Ghibli Museum"
+        date: 2025-05-08
+        time: "16:00"
+        tickets: 2
+        price:
+          amount: 2000
+          currency: JPY
+
+  # --- KAZAKHSTAN + TURKEY — August 2025 -----------------------------------
+  - id: "2025-08-kazakhstan-turkey"
+    title: "Almaty & Kaş/Antalya"
+    countries: [Kazakhstan, Turkey]
+    cities: [Almaty, Antalya, Kaş]
+    date_start: 2025-08-13
+    date_end: 2025-08-26
+    travelers: [traveler_1, traveler_2]
+
+    flights:
+      - direction: outbound
+        leg: "Moscow → Almaty"
+        airline: Aeroflot
+        flight_number: SU-1942
+        departure:
+          airport: SVO
+          city: Moscow
+          date: 2025-08-14
+          time: "00:05 +03:00"
+        arrival:
+          airport: ALA
+          city: Almaty
+          date: 2025-08-14
+          time: "06:30 +06:00"
+        class: Economy
+        price:
+          amount: 37736
+          currency: RUB
+          per: person
+
+      - direction: segment
+        leg: "Almaty → Antalya"
+        airline: Pegasus
+        flight_number: PC-111
+        departure:
+          airport: ALA
+          city: Almaty
+          date: 2025-08-18
+        arrival:
+          airport: AYT
+          city: Antalya
+          date: 2025-08-18
+
+      - direction: return
+        leg: "Antalya → Moscow"
+        airline: Aeroflot
+        flight_number: SU-2145
+        departure:
+          airport: AYT
+          city: Antalya
+          date: 2025-08-26
+        arrival:
+          airport: SVO
+          city: Moscow
+          date: 2025-08-26
+
+    transport:
+      - type: car
+        route: "Antalya → Kaş"
+        duration: "~4 hours each way"
+        notes: "Drive from Antalya airport to Kaş and back"
+
+    hotels:
+      - name: "Best Western Plus Atakent Park"
+        city: Almaty
+        address: "Ulitsa Timiriazeva 42, Almaty"
+        check_in: 2025-08-13
+        check_out: 2025-08-18
+        nights: 5
+        room_type: "Standard Double"
+        meals: breakfast
+        price:
+          amount: 38885
+          currency: RUB
+
+      - name: "Suna Sun Hotel – Adult Only"
+        city: "Kaş, Turkey"
+        address: "Bülent Kalkavan Sk. No: 10, 07580 Kaş"
+        check_in: 2025-08-18
+        check_in_time: "After 15:00"
+        check_out: 2025-08-26
+        check_out_time: "Before 11:00"
+        nights: 8
+        room_type: "Deluxe with sea view, queen-size bed, 35 m²"
+        meals: "Breakfast for 2 guests"
+
+  # --- VIETNAM — October–November 2025 (Hanoi, Phu Quoc, Bangkok transit) --
+  - id: "2025-10-vietnam"
+    title: "Hanoi, Phu Quoc & Bangkok transit"
+    countries: [Vietnam, Thailand]
+    cities: [Hanoi, Phu Quoc, Bangkok]
+    date_start: 2025-10-30
+    date_end: 2025-11-09
+    travelers: [traveler_1, traveler_2]
+
+    flights:
+      - direction: outbound
+        leg: "Moscow → Hanoi (via Chengdu)"
+        segments:
+          - airline: Sichuan Airlines
+            flight_number: 3U-3888
+            aircraft: Airbus A330
+            departure:
+              airport: SVO
+              city: Moscow
+              terminal: C
+              date: 2025-10-30
+              time: "21:55 +03:00"
+            arrival:
+              airport: TFU
+              city: Chengdu
+              terminal: 1
+              date: 2025-10-31
+              time: "11:40 +08:00"
+            baggage: "Carry-on 5 kg × 2, Luggage 23 kg × 2"
+
+          - airline: Sichuan Airlines
+            flight_number: 3U-3905
+            aircraft: Airbus A320
+            departure:
+              airport: TFU
+              city: Chengdu
+              terminal: 1
+              date: 2025-10-31
+              time: "20:40 +08:00"
+            arrival:
+              airport: HAN
+              city: Hanoi
+              terminal: 2
+              date: 2025-10-31
+              time: "22:00 +07:00"
+        notes: "Transfer in Chengdu ~9 hours"
+
+      - direction: segment
+        leg: "Hanoi → Phu Quoc"
+        airline: Vietnam Airlines
+        flight_number: VN-6401
+        departure:
+          airport: HAN
+          city: Hanoi
+          date: 2025-11-03
+          time: "12:30 +07:00"
+        arrival:
+          airport: PQC
+          city: Phu Quoc
+          date: 2025-11-03
+          time: "14:40 +07:00"
+        baggage: "Carry-on 10 kg × 2, Luggage 15 kg × 1"
+
+      - direction: segment
+        leg: "Phu Quoc → Bangkok"
+        airline: Thai Vietjet Air
+        flight_number: VZ-983
+        departure:
+          airport: PQC
+          city: Phu Quoc
+          date: 2025-11-07
+          time: "16:45 +07:00"
+        arrival:
+          airport: BKK
+          city: Bangkok
+          date: 2025-11-07
+          time: "18:05 +07:00"
+        baggage: "Luggage 25 kg × 1"
+
+      - direction: return
+        leg: "Bangkok → Moscow"
+        airline: Aeroflot
+        flight_number: SU-273
+        aircraft: Boeing 777-300
+        departure:
+          airport: BKK
+          city: Bangkok
+          date: 2025-11-09
+          time: "12:35 +07:00"
+        arrival:
+          airport: SVO
+          city: Moscow
+          terminal: C
+          date: 2025-11-09
+          time: "18:45 +03:00"
+        baggage: "Carry-on 10 kg × 2, Luggage 23 kg × 1"
+        price:
+          amount: 254812.36
+          currency: RUB
+          for_all: true
+          notes: "Total for all segments"
+
+    hotels:
+      - name: "Hanoi Center Silk Boutique Hotel & Travel 4*"
+        city: Hanoi
+        address: "16 Phố Chân Cầm, Hanoi"
+        check_in: 2025-10-31
+        check_out: 2025-11-03
+        nights: 3
+        room_type: "King Suite with Balcony"
+        meals: "Room only"
+
+      - name: "Premier Residences Phu Quoc Emerald Bay"
+        city: Phu Quoc
+        address: "Khem Beach, An Thoi, Phu Quoc District"
+        check_in: 2025-11-03
+        check_out: 2025-11-07
+        nights: 4
+        room_type: "Standard Room 1 King with Balcony"
+        meals: breakfast
+        extras: "Show tickets included"
+        price:
+          amount: 32548.28
+          currency: RUB
+          prepaid: true
+
+      - name: "Oakwood Suites Bangkok"
+        city: Bangkok
+        check_in: 2025-11-07
+        check_out: 2025-11-09
+        nights: 2
+        room_type: "Studio Deluxe King"
+        price:
+          amount: 22844.26
+          currency: RUB
+        notes: "Transit hotel before return flight"
+
+  # --- RUSSIA — February 2026 (Astrakhan) ----------------------------------
+  - id: "2026-02-astrakhan"
+    title: "Astrakhan, Russia"
+    country: Russia
+    cities: [Astrakhan]
+    date_start: 2026-02-12
+    date_end: 2026-02-14
+    travelers: [traveler_1, traveler_2]
+
+    flights:
+      - direction: outbound
+        airline: Pobeda
+        departure:
+          city: Moscow
+          date: 2026-02-12
+        arrival:
+          city: Astrakhan
+          date: 2026-02-12
+        notes: "Exact flight details not available"
+
+      - direction: return
+        airline: Aeroflot
+        departure:
+          city: Astrakhan
+          date: 2026-02-14
+        arrival:
+          city: Moscow
+          date: 2026-02-14
+        notes: "Exact flight details not available"
+
+    hotels:
+      - name: "Viktoriia Palas"
+        city: Astrakhan
+        address: "Krasnaya Naberezhnaya St 3, Astrakhan"
+        check_in: 2026-02-12
+        check_out: 2026-02-14
+        nights: 2
+        room_type: Lux
+        price:
+          amount: 12707
+          currency: RUB
+
+  # --- THAILAND + VIETNAM — Feb–Apr 2026 (Bangkok, Samui, HCMC) — ONGOING --
+  - id: "2026-03-thailand"
+    title: "Bangkok, Koh Samui & Ho Chi Minh City"
+    countries: [Thailand, Vietnam]
+    cities: [Bangkok, Koh Samui, Ho Chi Minh City]
+    date_start: 2026-03-01
+    status: ongoing
+    travelers: [traveler_1, traveler_2]
+
+    flights:
+      - direction: outbound
+        leg: "Moscow → Bangkok"
+        airline: Aeroflot
+        flight_number: SU-270
+        departure:
+          airport: SVO
+          city: Moscow
+          date: 2026-02-28
+          time: "19:15 +03:00"
+        arrival:
+          airport: BKK
+          city: Bangkok
+          date: 2026-03-01
+          time: "08:20 +07:00"
+        price:
+          amount: 35275.60
+          currency: RUB
+          per: person
+
+      - direction: segment
+        leg: "Bangkok → Koh Samui"
+        airline: Bangkok Airways
+        flight_number: PG-121
+        departure:
+          airport: BKK
+          city: Bangkok
+          date: 2026-03-03
+          time: "07:30 +07:00"
+        arrival:
+          airport: USM
+          city: Koh Samui
+          date: 2026-03-03
+          time: "08:40 +07:00"
+        class: Economy
+        baggage: "20 kg included"
+        price:
+          amount: 12531.32
+          currency: RUB
+          per: person
+
+      - direction: segment
+        leg: "Bangkok → Ho Chi Minh City"
+        airline: VietJetAir
+        flight_number: VJ804
+        departure:
+          airport: BKK
+          city: Bangkok
+          date: 2026-03-26
+          time: "14:00 +07:00"
+        arrival:
+          airport: SGN
+          city: Ho Chi Minh City
+          date: 2026-03-26
+          time: "15:30 +07:00"
+        class: Economy
+        baggage: "Personal item + carry-on (7 kg max total), no checked"
+
+    hotels:
+      - name: "Oakwood Suites Bangkok"
+        city: Bangkok
+        address: "20 Soi Sukhumvit 24, Bangkok"
+        check_in: 2026-03-01
+        check_out: 2026-03-03
+        nights: 2
+        room_type: "Executive Studio"
+        meals: none
+        price:
+          amount: 25601
+          currency: RUB
+
+      - name: "Centara Life Lamai Resort Samui"
+        city: Koh Samui
+        check_in: 2026-03-03
+        check_out: 2026-03-04
+        nights: 1
+        room_type: "Deluxe King Room"
+        price:
+          amount: 12269.87
+          currency: RUB
+
+      - name: "Centara Life Lamai Resort Samui"
+        city: Koh Samui
+        check_in: 2026-03-04
+        check_out: 2026-03-09
+        nights: 5
+        room_type: "Deluxe King with Balcony"
+        price:
+          amount: 65566.34
+          currency: RUB
+
+      - name: "Beachside Residence"
+        city: "Chong Mon, Koh Samui"
+        check_in: 2026-03-09
+        check_out: 2026-04-29
+        nights: 51
+
+    documents:
+      - type: immigration
+        name: "Thailand Digital Arrival Card"
+        notes: "Arrival 2026-03-01, departure 2026-03-26"
+
+      - type: insurance
+        name: "Aeroflot passenger insurance"
+        notes: "АльфаСтрахование, dated 2026-02-24"

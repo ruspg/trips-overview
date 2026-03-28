@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Travel Explorer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #05050a;
+    --surface: #0c0c14;
+    --surface2: #12121c;
+    --surface3: #1a1a28;
+    --border: #222234;
+    --text: #eaeaf4;
+    --text-dim: #8888a0;
+    --text-muted: #55556a;
+    --accent: #6366f1;
+    --accent-glow: #818cf8;
+    --accent2: #f472b6;
+    --accent3: #34d399;
+    --radius: 14px;
+    --radius-sm: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  /* ========== HEADER ========== */
+  .header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+    background: rgba(5,5,10,0.6);
+    backdrop-filter: blur(24px) saturate(1.8);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 0 24px; height: 52px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 18px; }
+  .header h1 {
+    font-size: 16px; font-weight: 800; letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #a5b4fc, #f0abfc);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .header-stats { display: flex; gap: 18px; font-size: 11px; color: var(--text-muted); }
+  .header-stats strong { color: var(--text-dim); font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .nav-pills { display: flex; gap: 2px; background: rgba(255,255,255,0.03); border-radius: 9px; padding: 3px; }
+  .nav-pill {
+    padding: 5px 13px; border-radius: 7px; font-size: 11px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; color: var(--text-muted); border: none; background: none;
+  }
+  .nav-pill:hover { color: var(--text); }
+  .nav-pill.active { color: #fff; background: var(--accent); }
+
+  /* ========== GLOBE ========== */
+  #globe-container {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 0;
+  }
+
+  /* ========== TRIP PANEL (left) ========== */
+  .trip-panel {
+    position: fixed; left: 14px; top: 64px; bottom: 14px;
+    width: 300px; z-index: 150;
+    background: rgba(8,8,14,0.88);
+    backdrop-filter: blur(24px) saturate(1.5);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: var(--radius);
+    display: flex; flex-direction: column; overflow: hidden;
+    transition: transform 0.3s, opacity 0.3s;
+  }
+  .trip-panel.hidden { transform: translateX(-320px); opacity: 0; pointer-events: none; }
+  .trip-panel-header { padding: 14px 16px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .trip-panel-header h2 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); }
+  .trip-panel-body { flex: 1; overflow-y: auto; padding: 6px; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+  .trip-item {
+    padding: 10px 12px; border-radius: var(--radius-sm); cursor: pointer;
+    transition: all 0.2s; margin-bottom: 2px; border: 1px solid transparent;
+  }
+  .trip-item:hover { background: rgba(255,255,255,0.04); }
+  .trip-item.active { background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.25); }
+  .trip-item-top { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+  .trip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .trip-item-title { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .trip-item-meta { font-size: 10px; color: var(--text-muted); padding-left: 16px; display: flex; gap: 6px; align-items: center; }
+  .badge-ongoing {
+    display: inline-block; padding: 1px 6px; border-radius: 100px;
+    font-size: 8px; font-weight: 700; text-transform: uppercase;
+    background: rgba(52,211,153,0.2); color: var(--accent3); letter-spacing: 0.04em;
+  }
+  .year-divider {
+    padding: 8px 12px 4px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.12em; color: var(--text-muted);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .year-divider::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(to right, rgba(255,255,255,0.06), transparent);
+  }
+  .year-divider .year-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: var(--accent-glow); font-weight: 600;
+  }
+
+  .panel-toggle {
+    position: fixed; left: 14px; top: 64px; z-index: 160;
+    width: 34px; height: 34px; border-radius: 9px;
+    background: rgba(8,8,14,0.85); backdrop-filter: blur(12px);
+    border: 1px solid var(--border); color: var(--text);
+    cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 14px;
+  }
+  .trip-panel.hidden ~ .panel-toggle { display: flex; }
+
+  /* ========== TRIP DETAIL (right) ========== */
+  .trip-detail {
+    position: fixed; right: 14px; top: 64px; bottom: 14px;
+    width: 360px; z-index: 150;
+    background: rgba(8,8,14,0.90);
+    backdrop-filter: blur(24px) saturate(1.5);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transform: translateX(400px); opacity: 0;
+    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.3s;
+    display: flex; flex-direction: column;
+  }
+  .trip-detail.visible { transform: translateX(0); opacity: 1; }
+  .trip-detail-header { padding: 18px; border-bottom: 1px solid rgba(255,255,255,0.04); position: relative; }
+  .trip-detail-close {
+    position: absolute; top: 10px; right: 10px;
+    width: 26px; height: 26px; border-radius: 7px;
+    background: rgba(255,255,255,0.04); border: none; color: var(--text-dim);
+    cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center;
+  }
+  .trip-detail-close:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+  .trip-detail-title { font-size: 17px; font-weight: 800; letter-spacing: -0.03em; padding-right: 30px; line-height: 1.3; }
+  .trip-detail-dates { font-size: 11px; color: var(--text-dim); margin-top: 5px; }
+  .trip-detail-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+  .trip-tag { padding: 2px 9px; border-radius: 100px; font-size: 10px; font-weight: 600; background: rgba(255,255,255,0.04); color: var(--text-dim); }
+  .trip-detail-body { flex: 1; overflow-y: auto; padding: 14px 18px; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+  .detail-section { margin-bottom: 18px; }
+  .detail-section-title { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); font-weight: 700; margin-bottom: 8px; }
+  .d-item { padding: 8px 10px; background: rgba(255,255,255,0.02); border-radius: 7px; margin-bottom: 3px; border: 1px solid rgba(255,255,255,0.02); transition: all 0.15s; }
+  .d-item:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.05); }
+  .d-item-primary { font-size: 12px; font-weight: 600; }
+  .d-item-secondary { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+  .d-item-accent { color: var(--accent-glow); }
+
+  /* ========== HOVER TOOLTIP ========== */
+  .globe-tooltip {
+    position: fixed; z-index: 500; pointer-events: none;
+    background: rgba(8,8,14,0.92); backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
+    padding: 10px 14px; max-width: 300px;
+    opacity: 0; transform: translateY(4px);
+    transition: opacity 0.12s, transform 0.12s;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+  .globe-tooltip.visible { opacity: 1; transform: translateY(0); }
+  .tt-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+  .tt-sub { font-size: 11px; color: var(--text-dim); }
+  .tt-trips { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+  .tt-trip { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-dim); }
+  .tt-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ========== MINI STATS (bottom-right) ========== */
+  .stats-overlay {
+    position: fixed; bottom: 14px; right: 14px; z-index: 150;
+    display: flex; gap: 5px;
+  }
+  .mini-stat {
+    background: rgba(8,8,14,0.8); backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.05); border-radius: 9px;
+    padding: 8px 12px; text-align: center; min-width: 64px;
+  }
+  .mini-stat-val { font-size: 16px; font-weight: 800; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.03em; }
+  .mini-stat-label { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px; font-weight: 600; }
+
+  /* ========== VIEWS ========== */
+  .view-panel { display: none; }
+  .view-panel.active { display: block; }
+
+  /* timeline & stats views - scrollable */
+  .scroll-view { position: fixed; top: 52px; left: 0; right: 0; bottom: 0; overflow-y: auto; background: var(--bg); z-index: 100; }
+  .tl-wrap { max-width: 860px; margin: 32px auto 40px; padding: 0 24px; }
+  .tl-title { font-size: 28px; font-weight: 900; letter-spacing: -0.04em; margin-bottom: 32px; }
+  .tl-title span { background: linear-gradient(135deg, var(--accent-glow), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .tl { position: relative; padding-left: 32px; }
+  .tl::before { content:''; position:absolute; left:11px; top:6px; bottom:6px; width:2px; border-radius:2px; background:linear-gradient(to bottom,var(--accent),var(--accent2),var(--accent3)); opacity:0.2; }
+  .tl-card { position:relative; margin-bottom:20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; cursor:pointer; transition:all 0.25s; }
+  .tl-card:hover { border-color:rgba(99,102,241,0.35); transform:translateX(3px); box-shadow:0 4px 20px rgba(99,102,241,0.06); }
+  .tl-card::before { content:''; position:absolute; left:-27px; top:18px; width:10px; height:10px; border-radius:50%; background:var(--accent); border:3px solid var(--bg); }
+  .tl-card.ongoing { border-color:rgba(52,211,153,0.25); }
+  .tl-card.ongoing::before { background:var(--accent3); box-shadow:0 0 10px var(--accent3); animation:tlp 2s infinite; }
+  @keyframes tlp { 0%,100%{box-shadow:0 0 4px var(--accent3)}50%{box-shadow:0 0 12px var(--accent3)} }
+  .tl-card-head { padding:14px 18px; display:flex; justify-content:space-between; align-items:flex-start; }
+  .tl-card-title { font-size:15px; font-weight:700; letter-spacing:-0.02em; }
+  .tl-card-sub { font-size:11px; color:var(--text-dim); margin-top:3px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .tl-card-flags { font-size:18px; flex-shrink:0; }
+  .tl-card-body { display:none; padding:0 18px 14px; border-top:1px solid var(--border); }
+  .tl-card.expanded .tl-card-body { display:block; padding-top:12px; }
+  .tl-dg { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px; }
+  .tl-bl { background:var(--surface2); border-radius:var(--radius-sm); padding:12px; }
+  .tl-bl h4 { font-size:9px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:6px; font-weight:700; }
+  .tl-bi { padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.02); font-size:12px; }
+  .tl-bi:last-child { border-bottom:none; }
+  .tl-bi-m { font-weight:600; }
+  .tl-bi-s { color:var(--text-muted); font-size:10px; margin-top:1px; }
+
+  /* stats view */
+  .stats-wrap { max-width: 960px; margin: 32px auto 40px; padding: 0 24px; }
+  .sg { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; margin-bottom:32px; }
+  .sg-c { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:18px; text-align:center; }
+  .sg-i { font-size:22px; margin-bottom:4px; }
+  .sg-v { font-size:26px; font-weight:900; font-family:'JetBrains Mono',monospace; letter-spacing:-0.04em; }
+  .sg-l { font-size:9px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-top:2px; font-weight:600; }
+  .bar-chart { display:flex; flex-direction:column; gap:5px; margin-bottom:32px; }
+  .bar-row { display:flex; align-items:center; gap:8px; }
+  .bar-lbl { width:150px; font-size:11px; color:var(--text-dim); text-align:right; flex-shrink:0; }
+  .bar-trk { flex:1; height:22px; background:var(--surface); border-radius:5px; overflow:hidden; }
+  .bar-fl { height:100%; border-radius:5px; display:flex; align-items:center; padding:0 8px; transition:width 1s ease; }
+  .bar-fl span { font-size:9px; font-weight:700; color:#fff; white-space:nowrap; }
+  .cg { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:8px; }
+  .cg-c { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px; text-align:center; transition:all 0.2s; }
+  .cg-c:hover { border-color:var(--accent); transform:translateY(-2px); }
+  .cg-f { font-size:28px; }
+  .cg-n { font-size:12px; font-weight:600; margin-top:3px; }
+  .cg-ct { font-size:10px; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
+
+  @media (max-width:768px) {
+    .trip-panel { width:260px; }
+    .trip-detail { width:300px; }
+    .header-stats { display:none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <h1>Travel Explorer</h1>
+    <div class="nav-pills">
+      <button class="nav-pill active" data-view="globe">Globe</button>
+      <button class="nav-pill" data-view="timeline">Timeline</button>
+      <button class="nav-pill" data-view="stats">Stats</button>
+    </div>
+  </div>
+  <div class="header-stats" id="header-stats"></div>
+</header>
+
+<!-- GLOBE VIEW -->
+<div class="view-panel active" id="view-globe">
+  <div id="globe-container"></div>
+  <div class="trip-panel" id="trip-panel">
+    <div class="trip-panel-header"><h2>Trips</h2></div>
+    <div class="trip-panel-body" id="trip-list"></div>
+  </div>
+  <button class="panel-toggle" id="panel-toggle">☰</button>
+  <div class="trip-detail" id="trip-detail"></div>
+  <div class="stats-overlay" id="stats-overlay"></div>
+  <div class="globe-tooltip" id="tooltip"></div>
+</div>
+
+<!-- TIMELINE VIEW -->
+<div class="view-panel" id="view-timeline">
+  <div class="scroll-view">
+    <div class="tl-wrap">
+      <h2 class="tl-title">Trip <span>Timeline</span></h2>
+      <div class="tl" id="timeline"></div>
+    </div>
+  </div>
+</div>
+
+<!-- STATS VIEW -->
+<div class="view-panel" id="view-stats">
+  <div class="scroll-view">
+    <div class="stats-wrap" id="stats-content"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/globe.gl@2.33.0"></script>
+<script>
+// ============================================================================
+// DATA
+// ============================================================================
+const TRIPS = [
+  {
+    id:"2022-12-asia", title:"Phuket → Bangkok → Seoul → Chengdu",
+    countries:["Thailand","South Korea","China"],
+    cities:["Phuket","Bangkok","Seoul","Chengdu"],
+    date_start:"2022-12-18", date_end:"2023-04-29", status:"completed",
+    flights:[
+      {leg:"Moscow → Phuket",dir:"outbound",airline:"Aeroflot",flight:"SU-276",aircraft:"Boeing 777-300ER",date:"2022-12-18",class:"Economy"},
+      {leg:"Phuket → Seoul",dir:"segment",date:"2023-03-09"},
+      {leg:"Seoul → Phuket",dir:"segment",date:"2023-03-22"},
+      {leg:"Phuket → Chengdu → Moscow",dir:"return",date:"2023-04-28"},
+    ],
+    hotels:[{name:"Karon Hotel",city:"Phuket",nights:5},{name:"The Title V",city:"Rawai, Phuket"},{name:"Hotel in Chengdu",city:"Chengdu",nights:1}],
+    activities:[{name:"Phi Phi Islands boat tour",date:"2023-02-19"},{name:"Bangkok city tour",date:"2023-02-23"}],
+    transport:[
+      {leg:"Phuket → Phi Phi Islands",mode:"boat",type:"Speed boat",date:"2023-02-19",note:"Day trip, round-trip"},
+      {leg:"Phi Phi Islands → Phuket",mode:"boat",type:"Speed boat",date:"2023-02-19"},
+    ],
+    color:"#f472b6",
+  },
+  {
+    id:"2024-04-grand-asia", title:"Grand Asia — Japan → Vietnam → Korea → China",
+    countries:["Japan","Vietnam","South Korea","China"],
+    cities:["Osaka","Kyoto","Kobe","Tokyo","Ho Chi Minh City","Nha Trang","Seoul","Hanoi","Chengdu"],
+    date_start:"2024-04-20", date_end:"2024-06-29", status:"completed",
+    flights:[
+      {leg:"Moscow → Osaka",dir:"outbound",airline:"Beijing Capital Airlines",flight:"JD-608",aircraft:"Airbus A330-200",date:"2024-04-20"},
+      {leg:"Tokyo → Ho Chi Minh City",dir:"segment",airline:"VietJetAir",flight:"VJ-823",aircraft:"Airbus A330",date:"2024-05-11"},
+      {leg:"Ho Chi Minh City → Nha Trang",dir:"segment",airline:"VietJetAir",date:"2024-05-18"},
+      {leg:"Nha Trang → Seoul",dir:"segment",airline:"Jeju Air",date:"2024-06-12"},
+      {leg:"Seoul → Nha Trang",dir:"segment",airline:"VietJetAir",date:"2024-06-19"},
+      {leg:"Nha Trang → Hanoi",dir:"segment",airline:"VietJetAir",date:"2024-06-22"},
+      {leg:"Hanoi → Nha Trang",dir:"segment",airline:"VietJetAir",date:"2024-06-25"},
+      {leg:"Nha Trang → Chengdu → Moscow",dir:"return",airline:"Sichuan Airlines",date:"2024-06-28",class:"Business"},
+    ],
+    hotels:[
+      {name:"Fairfield by Marriott Osaka Namba",city:"Osaka",nights:5},
+      {name:"Mitsui Garden Hotel Kyoto Sanjo",city:"Kyoto",nights:4},
+      {name:"Negiya Ryofukaku",city:"Kobe",nights:2},
+      {name:"Sotetsu Fresa Inn Tokyo-Kanda",city:"Tokyo",nights:3},
+      {name:"Koko Hotel Premier Nihonbashi",city:"Tokyo",nights:6},
+      {name:"DHTS Business Hotel",city:"Ho Chi Minh City",nights:7},
+      {name:"Diamond Bay Condotel",city:"Nha Trang",nights:7},
+      {name:"L7 Hongdae by Lotte",city:"Seoul",nights:7},
+      {name:"Hanoi Central Hotel",city:"Hanoi",nights:3},
+    ],
+    transport:[
+      {leg:"Osaka → Kyoto",mode:"train",type:"Shinkansen",date:"2024-04-26"},
+      {leg:"Kyoto → Kobe",mode:"train",type:"Shinkansen",date:"2024-04-30"},
+      {leg:"Kobe → Tokyo",mode:"train",type:"Shinkansen",date:"2024-05-02"},
+    ],
+    color:"#6366f1",
+  },
+  {
+    id:"2024-08-mineralnye-vody", title:"Mineralnye Vody & Budennovsk",
+    countries:["Russia"], cities:["Mineralnye Vody","Budennovsk"],
+    date_start:"2024-08-30", date_end:"2024-09-01", status:"completed",
+    flights:[
+      {leg:"Moscow → Mineralnye Vody",dir:"outbound",airline:"Aeroflot",flight:"SU-1304",date:"2024-08-30"},
+      {leg:"Mineralnye Vody → Moscow",dir:"return",airline:"Ural Airlines",flight:"U6-348",date:"2024-09-01"},
+    ],
+    hotels:[{name:"Stary Gorod",city:"Budennovsk",nights:2}],
+    transport:[
+      {leg:"Mineralnye Vody → Budennovsk",mode:"car",date:"2024-08-30"},
+      {leg:"Budennovsk → Mineralnye Vody",mode:"car",date:"2024-09-01"},
+    ],
+    color:"#ef4444",
+  },
+  {
+    id:"2025-04-japan", title:"Okinawa → Sapporo → Lake Toya → Tokyo",
+    countries:["Japan"], cities:["Okinawa","Sapporo","Lake Toya","Tokyo","Shanghai"],
+    date_start:"2025-04-29", date_end:"2025-05-12", status:"completed",
+    flights:[
+      {leg:"Moscow → Okinawa",dir:"outbound",airline:"China Eastern",date:"2025-04-29"},
+      {leg:"Okinawa → Sapporo",dir:"segment",airline:"Peach Aviation",date:"2025-05-03"},
+      {leg:"Sapporo → Tokyo",dir:"segment",airline:"AirDo",date:"2025-05-07"},
+      {leg:"Tokyo → Shanghai → Moscow",dir:"return",date:"2025-05-11"},
+    ],
+    hotels:[
+      {name:"Southwest Grand Hotel",city:"Okinawa",nights:3},
+      {name:"Royal Park Canvas Sapporo",city:"Sapporo",nights:2},
+      {name:"Lake View Toya Nonokaze Resort",city:"Lake Toya",nights:2},
+      {name:"Hotel Graphy Shibuya",city:"Tokyo",nights:4},
+    ],
+    activities:[{name:"Churaumi Aquarium",date:"2025-05-01"},{name:"Tokashiki Island ferry",date:"2025-05-01"},{name:"Ghibli Museum",date:"2025-05-08"}],
+    transport:[
+      {leg:"Naha → Churaumi Aquarium",mode:"car",date:"2025-05-01",note:"Day trip, round-trip"},
+      {leg:"Churaumi Aquarium → Naha",mode:"car",date:"2025-05-01"},
+      {leg:"Sapporo → Lake Toya",mode:"bus",date:"2025-05-05"},
+      {leg:"Lake Toya → Sapporo",mode:"bus",date:"2025-05-07"},
+    ],
+    color:"#f59e0b",
+  },
+  {
+    id:"2025-08-kazakhstan-turkey", title:"Almaty & Kaş / Antalya",
+    countries:["Kazakhstan","Turkey"], cities:["Almaty","Antalya","Kaş"],
+    date_start:"2025-08-13", date_end:"2025-08-26", status:"completed",
+    flights:[
+      {leg:"Moscow → Almaty",dir:"outbound",airline:"Aeroflot",flight:"SU-1942",date:"2025-08-14"},
+      {leg:"Almaty → Antalya",dir:"segment",airline:"Pegasus",flight:"PC-111",date:"2025-08-18"},
+      {leg:"Antalya → Moscow",dir:"return",airline:"Aeroflot",flight:"SU-2145",date:"2025-08-26"},
+    ],
+    hotels:[{name:"Best Western Plus Atakent Park",city:"Almaty",nights:5},{name:"Suna Sun Hotel — Adult Only",city:"Kaş",nights:8}],
+    color:"#14b8a6",
+  },
+  {
+    id:"2025-10-vietnam", title:"Hanoi → Phu Quoc → Bangkok",
+    countries:["Vietnam","Thailand"], cities:["Hanoi","Phu Quoc","Bangkok"],
+    date_start:"2025-10-30", date_end:"2025-11-09", status:"completed",
+    flights:[
+      {leg:"Moscow → Hanoi",dir:"outbound",airline:"Sichuan Airlines",flight:"3U-3888",aircraft:"Airbus A330",date:"2025-10-30"},
+      {leg:"Hanoi → Phu Quoc",dir:"segment",airline:"Vietnam Airlines",flight:"VN-6401",date:"2025-11-03"},
+      {leg:"Phu Quoc → Bangkok",dir:"segment",airline:"Thai Vietjet Air",flight:"VZ-983",date:"2025-11-07"},
+      {leg:"Bangkok → Moscow",dir:"return",airline:"Aeroflot",flight:"SU-273",aircraft:"Boeing 777-300",date:"2025-11-09"},
+    ],
+    hotels:[{name:"Hanoi Center Silk Boutique",city:"Hanoi",nights:3},{name:"Premier Residences Phu Quoc",city:"Phu Quoc",nights:4},{name:"Oakwood Suites Bangkok",city:"Bangkok",nights:2}],
+    color:"#8b5cf6",
+  },
+  {
+    id:"2026-02-astrakhan", title:"Astrakhan",
+    countries:["Russia"], cities:["Astrakhan"],
+    date_start:"2026-02-12", date_end:"2026-02-14", status:"completed",
+    flights:[
+      {leg:"Moscow → Astrakhan",dir:"outbound",airline:"Pobeda",date:"2026-02-12"},
+      {leg:"Astrakhan → Moscow",dir:"return",airline:"Aeroflot",date:"2026-02-14"},
+    ],
+    hotels:[{name:"Viktoriia Palas",city:"Astrakhan",nights:2}],
+    color:"#ec4899",
+  },
+  {
+    id:"2026-03-thailand", title:"Bangkok → Koh Samui",
+    countries:["Thailand"], cities:["Bangkok","Koh Samui"],
+    date_start:"2026-03-01", date_end:null, status:"ongoing",
+    flights:[
+      {leg:"Moscow → Bangkok",dir:"outbound",airline:"Aeroflot",flight:"SU-270",date:"2026-02-28"},
+      {leg:"Bangkok → Koh Samui",dir:"segment",airline:"Bangkok Airways",flight:"PG-121",date:"2026-03-03"},
+    ],
+    hotels:[{name:"Oakwood Suites Bangkok",city:"Bangkok",nights:2},{name:"Centara Life Lamai Resort",city:"Koh Samui",nights:6},{name:"Beachside Residence",city:"Koh Samui",nights:51}],
+    color:"#34d399",
+  },
+];
+
+const COORDS = {
+  "Moscow":{lat:55.7558,lng:37.6173},"Phuket":{lat:7.8804,lng:98.3923},"Bangkok":{lat:13.7563,lng:100.5018},
+  "Seoul":{lat:37.5665,lng:126.978},"Chengdu":{lat:30.5728,lng:104.0657},"Osaka":{lat:34.6937,lng:135.5022},
+  "Kyoto":{lat:35.0116,lng:135.7681},"Kobe":{lat:34.6901,lng:135.1955},"Tokyo":{lat:35.6895,lng:139.6917},
+  "Ho Chi Minh City":{lat:10.8231,lng:106.6297},"Nha Trang":{lat:12.2388,lng:109.1967},"Hanoi":{lat:21.0278,lng:105.8342},
+  "Hangzhou":{lat:30.2741,lng:120.1551},"Mineralnye Vody":{lat:44.2107,lng:43.135},"Budennovsk":{lat:44.7837,lng:44.1652},
+  "Okinawa":{lat:26.3344,lng:127.6809},"Sapporo":{lat:43.0618,lng:141.3545},"Lake Toya":{lat:42.6049,lng:140.8435},
+  "Shanghai":{lat:31.2304,lng:121.4737},"Almaty":{lat:43.222,lng:76.9458},"Antalya":{lat:36.8969,lng:30.7133},
+  "Kaş":{lat:36.1992,lng:29.6386},"Phu Quoc":{lat:10.227,lng:103.96},"Koh Samui":{lat:9.512,lng:100.0604},
+  "Astrakhan":{lat:46.3497,lng:48.0336},"Rawai, Phuket":{lat:7.7744,lng:98.3282},
+  "Phi Phi Islands":{lat:7.7407,lng:98.7784},"Naha":{lat:26.2124,lng:127.6792},
+  "Churaumi Aquarium":{lat:26.6944,lng:127.8778},
+};
+
+const FLAGS = {"Thailand":"🇹🇭","South Korea":"🇰🇷","China":"🇨🇳","Japan":"🇯🇵","Vietnam":"🇻🇳","Russia":"🇷🇺","Kazakhstan":"🇰🇿","Turkey":"🇹🇷"};
+const ISO_A3 = {"Thailand":"THA","South Korea":"KOR","China":"CHN","Japan":"JPN","Vietnam":"VNM","Russia":"RUS","Kazakhstan":"KAZ","Turkey":"TUR"};
+const VISITED_ISO = new Set(Object.values(ISO_A3));
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+const fmtDate = d => { if(!d) return 'now'; return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); };
+const daysBetween = (a,b) => Math.ceil((new Date(b||'2026-03-28')-new Date(a))/864e5);
+function parseLeg(leg) { return leg.split(/\s*→\s*/).map(c=>c.replace(/\s*\(.*?\)/,'').trim()); }
+
+const cityVisits = {}, cityTrips = {};
+TRIPS.forEach(t => t.cities.forEach(c => {
+  cityVisits[c]=(cityVisits[c]||0)+1;
+  if(!cityTrips[c]) cityTrips[c]=[];
+  cityTrips[c].push(t);
+}));
+
+// Stats
+const allCountries=new Set(), allCities=new Set();
+let totalFlights=0, totalDays=0, totalNights=0;
+TRIPS.forEach(t => {
+  t.countries.forEach(c=>allCountries.add(c)); t.cities.forEach(c=>allCities.add(c));
+  totalFlights+=t.flights.length; totalDays+=daysBetween(t.date_start,t.date_end);
+  (t.hotels||[]).forEach(h=>{if(h.nights) totalNights+=h.nights;});
+});
+const countryVisits={}; TRIPS.forEach(t=>t.countries.forEach(c=>{countryVisits[c]=(countryVisits[c]||0)+1;}));
+
+// Header
+document.getElementById('header-stats').innerHTML = [
+  [allCountries.size,'countries'],[allCities.size,'cities'],[TRIPS.length,'trips'],[totalFlights,'flights']
+].map(([v,l])=>`<span><strong>${v}</strong> ${l}</span>`).join('');
+
+// Mini stats
+document.getElementById('stats-overlay').innerHTML = [
+  [allCountries.size,'Countries'],[totalFlights,'Flights'],[totalDays+'+','Days'],[totalNights,'Nights']
+].map(([v,l])=>`<div class="mini-stat"><div class="mini-stat-val">${v}</div><div class="mini-stat-label">${l}</div></div>`).join('');
+
+// Transport mode icons/labels
+const MODE_ICONS = {train:'🚅',bus:'🚌',car:'🚗',boat:'⛵',ferry:'⛴'};
+
+// ============================================================================
+// BUILD GLOBE DATA
+// ============================================================================
+function buildArcs(filterTrip) {
+  const arcs = [];
+  const trips = filterTrip ? TRIPS.filter(t=>t.id===filterTrip) : TRIPS;
+  trips.forEach((trip, ti) => {
+    trip.flights.forEach((fl, fi) => {
+      const cities = parseLeg(fl.leg);
+      for (let i=0; i<cities.length-1; i++) {
+        const from=COORDS[cities[i]], to=COORDS[cities[i+1]];
+        if (from && to) {
+          arcs.push({
+            startLat:from.lat, startLng:from.lng,
+            endLat:to.lat, endLng:to.lng,
+            color: trip.color, tripId: trip.id,
+            label: fl.leg, airline: fl.airline||'', flight: fl.flight||'',
+            aircraft: fl.aircraft||'', date: fl.date||'', fclass: fl.class||'',
+            tripTitle: trip.title, isTransport: false,
+            seq: fi, // sequence index for animation offset
+          });
+        }
+      }
+    });
+  });
+  return arcs;
+}
+
+// Surface paths for ground/water transport
+function buildPaths(filterTrip) {
+  const paths = [];
+  const trips = filterTrip ? TRIPS.filter(t=>t.id===filterTrip) : TRIPS;
+  trips.forEach(trip => {
+    (trip.transport||[]).forEach(tr => {
+      const cities = parseLeg(tr.leg);
+      const coords = cities.map(c=>COORDS[c]).filter(Boolean);
+      if (coords.length >= 2) {
+        paths.push({
+          coords: coords.map(c => ({lat:c.lat, lng:c.lng})),
+          color: trip.color + 'aa',
+          tripId: trip.id, tripTitle: trip.title,
+          label: tr.leg, mode: tr.mode, type: tr.type||'',
+          date: tr.date||'', note: tr.note||'',
+        });
+      }
+    });
+  });
+  return paths;
+}
+
+function buildPoints(filterTrip) {
+  const pts = [], seen = new Set();
+  const trips = filterTrip ? TRIPS.filter(t=>t.id===filterTrip) : TRIPS;
+  trips.forEach(trip => {
+    // City points
+    trip.cities.forEach(c => {
+      if (COORDS[c] && !seen.has(c)) {
+        seen.add(c);
+        pts.push({
+          lat: COORDS[c].lat, lng: COORDS[c].lng,
+          name: c, visits: cityVisits[c]||1,
+          color: '#fff', size: 0.25 + (cityVisits[c]||1)*0.1,
+          trips: (cityTrips[c]||[]).map(t=>({title:t.title,color:t.color,id:t.id})),
+        });
+      }
+    });
+    // Transport endpoint points (e.g. Phi Phi, Aquarium)
+    (trip.transport||[]).forEach(tr => {
+      parseLeg(tr.leg).forEach(c => {
+        if (COORDS[c] && !seen.has(c)) {
+          seen.add(c);
+          pts.push({
+            lat: COORDS[c].lat, lng: COORDS[c].lng,
+            name: c, visits: 1,
+            color: '#fff', size: 0.2,
+            trips: [{title:trip.title,color:trip.color,id:trip.id}],
+          });
+        }
+      });
+    });
+  });
+  return pts;
+}
+
+// ============================================================================
+// 3D GLOBE (Globe.gl)
+// ============================================================================
+let selectedTrip = null;
+let hoveredCountryId = null;
+let countriesGeo = null;
+
+const globe = Globe()
+  // Vector globe — no raster texture, pure polygon surface
+  .globeImageUrl('')
+  .backgroundColor('#05050a')
+  .backgroundImageUrl('https://unpkg.com/three-globe@2.33.0/example/img/night-sky.png')
+  .showAtmosphere(true)
+  .atmosphereColor('#4455dd')
+  .atmosphereAltitude(0.15)
+  // Arcs (flights) — thin elegant lines with slow flowing dash
+  .arcsData(buildArcs())
+  .arcColor('color')
+  .arcStroke(0.45)
+  .arcDashLength(0.6)
+  .arcDashGap(0.25)
+  .arcDashAnimateTime(4000) // slow flowing dash — shows direction
+  .arcAltitudeAutoScale(0.3)
+  .arcLabel(d => '')
+  .onArcHover(handleArcHover)
+  .onArcClick(d => { if(d) selectTrip(d.tripId); })
+  // Surface paths (ground/water transport)
+  .pathsData(buildPaths())
+  .pathPoints('coords')
+  .pathPointLat('lat')
+  .pathPointLng('lng')
+  .pathColor('color')
+  .pathStroke(1.2)
+  .pathDashLength(0.3)
+  .pathDashGap(0.15)
+  .pathDashAnimateTime(6000)  // slower dash for surface
+  .pathLabel(d => '')
+  .onPathHover(handlePathHover)
+  .onPathClick(d => { if(d) selectTrip(d.tripId); })
+  // Points (cities) — rendered below labels
+  .pointsData(buildPoints())
+  .pointLat('lat')
+  .pointLng('lng')
+  .pointColor('color')
+  .pointAltitude(0.006)
+  .pointRadius('size')
+  .pointLabel(d => '')
+  .onPointHover(handlePointHover)
+  .onPointClick(d => { if(d && d.trips.length) selectTrip(d.trips[0].id); })
+  // Labels (city names) — higher altitude so they float above arcs
+  .labelsData(buildPoints())
+  .labelLat('lat')
+  .labelLng('lng')
+  .labelText('name')
+  .labelSize(d => 0.5 + (d.visits||1)*0.1)
+  .labelDotRadius(0)
+  .labelColor(() => 'rgba(220,220,240,0.9)')
+  .labelResolution(3)
+  .labelAltitude(0.025)
+  // Polygons (countries) — vector surface
+  .polygonsData([])
+  .polygonCapColor(d => {
+    const iso = d.properties?.ADM0_A3 || d.properties?.adm0_a3 || '';
+    if (hoveredCountryId && iso === hoveredCountryId) {
+      return VISITED_ISO.has(iso) ? 'rgba(129,140,248,0.35)' : 'rgba(60,60,90,0.25)';
+    }
+    if (VISITED_ISO.has(iso)) return 'rgba(80,80,140,0.15)';
+    return 'rgba(18,18,30,0.85)';  // dark land mass
+  })
+  .polygonSideColor(d => {
+    const iso = d.properties?.ADM0_A3 || d.properties?.adm0_a3 || '';
+    if (hoveredCountryId && iso === hoveredCountryId) return 'rgba(129,140,248,0.3)';
+    return 'rgba(25,25,45,0.6)';
+  })
+  .polygonStrokeColor(d => {
+    const iso = d.properties?.ADM0_A3 || d.properties?.adm0_a3 || '';
+    if (hoveredCountryId && iso === hoveredCountryId) {
+      return VISITED_ISO.has(iso) ? 'rgba(165,180,252,0.9)' : 'rgba(100,100,140,0.5)';
+    }
+    if (VISITED_ISO.has(iso)) return 'rgba(129,140,248,0.35)';
+    return 'rgba(45,45,70,0.4)';  // subtle borders for all
+  })
+  .polygonAltitude(d => {
+    const iso = d.properties?.ADM0_A3 || d.properties?.adm0_a3 || '';
+    if (hoveredCountryId && iso === hoveredCountryId) return 0.012;
+    if (VISITED_ISO.has(iso)) return 0.004;
+    return 0.001;
+  })
+  .onPolygonHover(handleCountryHover)
+  .onPolygonClick(d => {
+    if (!d) return;
+    const iso = d.properties?.ADM0_A3 || d.properties?.adm0_a3 || '';
+    const countryName = Object.keys(ISO_A3).find(k=>ISO_A3[k]===iso);
+    if (countryName) {
+      const trip = TRIPS.find(t=>t.countries.includes(countryName));
+      if (trip) selectTrip(trip.id);
+    }
+  })
+  (document.getElementById('globe-container'));
+
+// Initial camera — Asia-centric
+globe.pointOfView({ lat: 25, lng: 85, altitude: 2.2 }, 0);
+
+// Renderer
+const renderer = globe.renderer();
+renderer.setPixelRatio(window.devicePixelRatio);
+
+// Set globe material for vector look — dark ocean
+const globeMaterial = globe.globeMaterial();
+globeMaterial.color.set('#08081a');
+globeMaterial.emissive.set('#060614');
+globeMaterial.emissiveIntensity = 0.3;
+globeMaterial.shininess = 0;
+
+// Load country polygons (all countries for vector surface)
+fetch('https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson')
+  .then(r => r.json())
+  .then(geo => {
+    countriesGeo = geo;
+    globe.polygonsData(geo.features);
+  });
+
+// ============================================================================
+// HOVER HANDLERS
+// ============================================================================
+const tooltip = document.getElementById('tooltip');
+let lastMouseX = 0, lastMouseY = 0;
+document.addEventListener('mousemove', e => { lastMouseX=e.clientX; lastMouseY=e.clientY; });
+
+function positionTooltip() {
+  const tw = tooltip.offsetWidth||280, th = tooltip.offsetHeight||100;
+  let x = lastMouseX+14, y = lastMouseY+14;
+  if (x+tw > window.innerWidth-12) x = lastMouseX-tw-14;
+  if (y+th > window.innerHeight-12) y = lastMouseY-th-14;
+  tooltip.style.left = x+'px'; tooltip.style.top = y+'px';
+}
+
+function showTooltip(html) {
+  tooltip.innerHTML = html;
+  tooltip.classList.add('visible');
+  requestAnimationFrame(positionTooltip);
+}
+function hideTooltip() { tooltip.classList.remove('visible'); }
+
+function handlePointHover(point) {
+  if (!point) { hideTooltip(); return; }
+  const trips = point.trips || [];
+  showTooltip(`
+    <div class="tt-title">${point.name}</div>
+    <div class="tt-sub">${point.visits} visit${point.visits>1?'s':''}</div>
+    ${trips.length ? `<div class="tt-trips">${trips.map(t=>
+      `<div class="tt-trip"><div class="tt-dot" style="background:${t.color}"></div>${t.title}</div>`
+    ).join('')}</div>` : ''}
+  `);
+}
+
+function handleArcHover(arc) {
+  if (!arc) {
+    hideTooltip();
+    globe.arcStroke(0.45).arcColor('color');
+    return;
+  }
+  showTooltip(`
+    <div class="tt-title" style="color:${arc.color}">✈ ${arc.label}</div>
+    <div class="tt-sub">
+      ${arc.airline ? '<strong>'+arc.airline+'</strong>' : ''}
+      ${arc.flight ? ' · '+arc.flight : ''}
+      ${arc.aircraft ? ' · '+arc.aircraft : ''}
+    </div>
+    ${arc.date ? `<div class="tt-sub">${fmtDate(arc.date)}${arc.fclass?' · '+arc.fclass:''}</div>` : ''}
+    <div class="tt-sub" style="margin-top:4px;opacity:0.5">${arc.tripTitle}</div>
+  `);
+  globe
+    .arcStroke(d => d === arc ? 1.4 : 0.15)
+    .arcColor(d => d === arc ? arc.color : arc.color + '25');
+}
+
+function handlePathHover(path) {
+  if (!path) {
+    hideTooltip();
+    globe.pathStroke(1.2).pathColor('color');
+    return;
+  }
+  const icon = MODE_ICONS[path.mode] || '🚗';
+  showTooltip(`
+    <div class="tt-title" style="color:${path.color}">${icon} ${path.label}</div>
+    <div class="tt-sub">
+      ${path.type ? '<strong>'+path.type+'</strong>' : path.mode}
+      ${path.date ? ' · '+fmtDate(path.date) : ''}
+    </div>
+    ${path.note ? `<div class="tt-sub" style="opacity:0.6">${path.note}</div>` : ''}
+    <div class="tt-sub" style="margin-top:4px;opacity:0.5">${path.tripTitle}</div>
+  `);
+  globe
+    .pathStroke(d => d === path ? 2.5 : 0.6)
+    .pathColor(d => d === path ? path.color : path.color.replace('aa','30'));
+}
+
+function handleCountryHover(poly) {
+  const iso = poly ? (poly.properties?.ADM0_A3 || poly.properties?.adm0_a3 || '') : null;
+  const wasHovered = hoveredCountryId;
+
+  if (iso && VISITED_ISO.has(iso)) {
+    hoveredCountryId = iso;
+    const name = poly.properties?.name || poly.properties?.NAME || '';
+    const countryKey = Object.keys(ISO_A3).find(k=>ISO_A3[k]===iso);
+    const flag = countryKey ? FLAGS[countryKey] : '';
+    const visits = countryKey ? (countryVisits[countryKey]||0) : 0;
+    const tripsHere = countryKey ? TRIPS.filter(t=>t.countries.includes(countryKey)) : [];
+
+    showTooltip(`
+      <div class="tt-title">${flag} ${name}</div>
+      <div class="tt-sub">${visits} trip${visits>1?'s':''}</div>
+      ${tripsHere.length ? `<div class="tt-trips">${tripsHere.map(t=>
+        `<div class="tt-trip"><div class="tt-dot" style="background:${t.color}"></div>${t.title}</div>`
+      ).join('')}</div>` : ''}
+    `);
+  } else {
+    hoveredCountryId = null;
+    if (!poly) hideTooltip();
+  }
+
+  // Re-render polygons only if hover state changed
+  if (wasHovered !== hoveredCountryId && countriesGeo) {
+    globe.polygonsData(countriesGeo.features);
+  }
+}
+
+// ============================================================================
+// TRIP PANEL
+// ============================================================================
+function renderTripList() {
+  // Sort by date descending (newest first)
+  const sorted = TRIPS.slice().sort((a,b) => new Date(b.date_start) - new Date(a.date_start));
+  let lastYear = null;
+  let html = '';
+  sorted.forEach(t => {
+    const year = new Date(t.date_start).getFullYear();
+    if (year !== lastYear) {
+      html += `<div class="year-divider"><span class="year-label">${year}</span></div>`;
+      lastYear = year;
+    }
+    html += `
+    <div class="trip-item ${selectedTrip===t.id?'active':''}" data-id="${t.id}">
+      <div class="trip-item-top">
+        <div class="trip-dot" style="background:${t.color};box-shadow:0 0 6px ${t.color}"></div>
+        <div class="trip-item-title">${t.title}</div>
+      </div>
+      <div class="trip-item-meta">
+        <span>${t.countries.map(c=>FLAGS[c]).join('')}</span>
+        <span>${fmtDate(t.date_start).split(',')[0]}${t.date_end?' — '+fmtDate(t.date_end).split(',')[0]:' — now'}</span>
+        ${t.status==='ongoing'?'<span class="badge-ongoing">ongoing</span>':''}
+      </div>
+    </div>`;
+  });
+  document.getElementById('trip-list').innerHTML = html;
+
+  document.querySelectorAll('.trip-item').forEach(el => {
+    el.addEventListener('click', () => selectTrip(el.dataset.id));
+    el.addEventListener('mouseenter', () => {
+      if (!selectedTrip) {
+        globe.arcStroke(d => d.tripId===el.dataset.id ? 0.9 : 0.1)
+             .arcColor(d => d.tripId===el.dataset.id ? d.color : d.color+'18')
+             .pathStroke(d => d.tripId===el.dataset.id ? 2 : 0.4)
+             .pathColor(d => d.tripId===el.dataset.id ? d.color : d.color.replace('aa','18'));
+      }
+    });
+    el.addEventListener('mouseleave', () => {
+      if (!selectedTrip) {
+        globe.arcStroke(0.45).arcColor('color').pathStroke(1.2).pathColor('color');
+      }
+    });
+  });
+}
+renderTripList();
+document.getElementById('panel-toggle').addEventListener('click', () => {
+  document.getElementById('trip-panel').classList.remove('hidden');
+});
+
+// ============================================================================
+// TRIP SELECTION
+// ============================================================================
+function selectTrip(id) {
+  if (selectedTrip === id) {
+    selectedTrip = null;
+    renderTripList();
+    globe.arcsData(buildArcs()).pathsData(buildPaths())
+         .pointsData(buildPoints()).labelsData(buildPoints())
+         .arcStroke(0.45).arcColor('color').pathStroke(1.2).pathColor('color');
+    globe.pointOfView({ lat:25, lng:85, altitude:2.2 }, 1500);
+    closeTripDetail();
+    return;
+  }
+  selectedTrip = id;
+  renderTripList();
+  globe.arcsData(buildArcs(id)).pathsData(buildPaths(id))
+       .pointsData(buildPoints(id)).labelsData(buildPoints(id))
+       .arcStroke(0.55).arcColor('color').pathStroke(1.2).pathColor('color');
+
+  // Fly to trip — focus on destination cities, not Moscow (unless Russia trip)
+  const trip = TRIPS.find(t=>t.id===id);
+  if (trip) {
+    const isRussiaTrip = trip.countries.length === 1 && trip.countries[0] === 'Russia';
+    const pts = trip.cities.map(c=>COORDS[c]).filter(Boolean);
+    // Only include Moscow for Russia-domestic trips
+    if (isRussiaTrip && COORDS['Moscow'] && !trip.cities.includes('Moscow')) {
+      pts.push(COORDS['Moscow']);
+    }
+    if (pts.length === 0) return;
+    const avgLat = pts.reduce((s,p)=>s+p.lat,0)/pts.length;
+    const avgLng = pts.reduce((s,p)=>s+p.lng,0)/pts.length;
+    const latSpread = Math.max(...pts.map(p=>p.lat))-Math.min(...pts.map(p=>p.lat));
+    const lngSpread = Math.max(...pts.map(p=>p.lng))-Math.min(...pts.map(p=>p.lng));
+    const spread = Math.max(latSpread, lngSpread);
+    // Closer zoom for focused trips
+    const alt = Math.max(0.5, Math.min(2.5, spread/35));
+    globe.pointOfView({ lat:avgLat, lng:avgLng, altitude:alt }, 1500);
+  }
+  showTripDetail(id);
+}
+
+function showTripDetail(id) {
+  const t = TRIPS.find(x=>x.id===id);
+  if (!t) return;
+  const days = daysBetween(t.date_start, t.date_end);
+  const el = document.getElementById('trip-detail');
+  el.innerHTML = `
+    <div class="trip-detail-header">
+      <button class="trip-detail-close" onclick="selectTrip('${t.id}')">✕</button>
+      <div style="font-size:22px;margin-bottom:6px;">${t.countries.map(c=>FLAGS[c]).join(' ')}</div>
+      <div class="trip-detail-title">${t.title}</div>
+      <div class="trip-detail-dates">${fmtDate(t.date_start)} — ${t.date_end?fmtDate(t.date_end):'ongoing'}</div>
+      <div class="trip-detail-tags">
+        <span class="trip-tag" style="background:${t.color}18;color:${t.color}">${days} days</span>
+        <span class="trip-tag">${t.flights.length} flights</span>
+        <span class="trip-tag">${(t.hotels||[]).length} hotels</span>
+        ${t.status==='ongoing'?'<span class="trip-tag" style="background:rgba(52,211,153,0.12);color:var(--accent3)">ongoing</span>':''}
+      </div>
+    </div>
+    <div class="trip-detail-body">
+      <div class="detail-section">
+        <div class="detail-section-title">✈ Flights</div>
+        ${t.flights.map(f=>`
+          <div class="d-item">
+            <div class="d-item-primary d-item-accent">${f.leg}</div>
+            <div class="d-item-secondary">${f.airline||''}${f.flight?' · '+f.flight:''}${f.aircraft?' · '+f.aircraft:''}</div>
+            <div class="d-item-secondary">${f.date?fmtDate(f.date):''}${f.class?' · '+f.class:''}</div>
+          </div>
+        `).join('')}
+      </div>
+      ${(t.hotels&&t.hotels.length)?`
+      <div class="detail-section">
+        <div class="detail-section-title">🏨 Hotels</div>
+        ${t.hotels.map(h=>`
+          <div class="d-item">
+            <div class="d-item-primary">${h.name}</div>
+            <div class="d-item-secondary">${h.city}${h.nights?' · '+h.nights+' nights':''}</div>
+          </div>
+        `).join('')}
+      </div>`:''}
+      ${(t.transport&&t.transport.length)?`
+      <div class="detail-section">
+        <div class="detail-section-title">🚃 Transport</div>
+        ${t.transport.map(tr=>`
+          <div class="d-item">
+            <div class="d-item-primary">${(MODE_ICONS[tr.mode]||'')} ${tr.leg}</div>
+            <div class="d-item-secondary">${tr.type||tr.mode}${tr.date?' · '+fmtDate(tr.date):''}${tr.note?' · '+tr.note:''}</div>
+          </div>
+        `).join('')}
+      </div>`:''}
+      ${(t.activities&&t.activities.length)?`
+      <div class="detail-section">
+        <div class="detail-section-title">🎯 Activities</div>
+        ${t.activities.map(a=>`
+          <div class="d-item">
+            <div class="d-item-primary">${a.name}</div>
+            <div class="d-item-secondary">${fmtDate(a.date)}</div>
+          </div>
+        `).join('')}
+      </div>`:''}
+    </div>
+  `;
+  setTimeout(()=>el.classList.add('visible'), 10);
+}
+function closeTripDetail() { document.getElementById('trip-detail').classList.remove('visible'); }
+
+// ============================================================================
+// VIEW TOGGLE
+// ============================================================================
+document.querySelectorAll('.nav-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.nav-pill').forEach(p=>p.classList.remove('active'));
+    pill.classList.add('active');
+    const v = pill.dataset.view;
+    document.querySelectorAll('.view-panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById('view-'+v).classList.add('active');
+  });
+});
+
+// ============================================================================
+// TIMELINE
+// ============================================================================
+document.getElementById('timeline').innerHTML = TRIPS.slice().sort((a,b) => new Date(b.date_start) - new Date(a.date_start)).map(t => {
+  const d = daysBetween(t.date_start, t.date_end);
+  return `
+  <div class="tl-card ${t.status==='ongoing'?'ongoing':''}" onclick="this.classList.toggle('expanded')">
+    <div class="tl-card-head">
+      <div>
+        <div class="tl-card-title" style="color:${t.color}">${t.title}</div>
+        <div class="tl-card-sub">
+          ${fmtDate(t.date_start)} — ${t.date_end?fmtDate(t.date_end):'now'}
+          <span class="trip-tag" style="background:${t.color}18;color:${t.color}">${d}d</span>
+          ${t.flights.length} flights · ${(t.hotels||[]).length} hotels
+          ${t.status==='ongoing'?'<span class="badge-ongoing">ongoing</span>':''}
+        </div>
+      </div>
+      <div class="tl-card-flags">${t.countries.map(c=>FLAGS[c]).join('')}</div>
+    </div>
+    <div class="tl-card-body">
+      <div class="tl-dg">
+        <div class="tl-bl"><h4>✈ Flights</h4>
+          ${t.flights.map(f=>`<div class="tl-bi"><div class="tl-bi-m" style="color:var(--accent-glow)">${f.leg}</div><div class="tl-bi-s">${f.airline||''} ${f.date?'· '+fmtDate(f.date):''} ${f.class?'· '+f.class:''}</div></div>`).join('')}
+        </div>
+        ${(t.hotels&&t.hotels.length)?`<div class="tl-bl"><h4>🏨 Hotels</h4>
+          ${t.hotels.map(h=>`<div class="tl-bi"><div class="tl-bi-m">${h.name}</div><div class="tl-bi-s">${h.city}${h.nights?' · '+h.nights+'n':''}</div></div>`).join('')}
+        </div>`:''}
+        ${(t.transport&&t.transport.length)?`<div class="tl-bl"><h4>🚃 Transport</h4>
+          ${t.transport.map(tr=>`<div class="tl-bi"><div class="tl-bi-m">${(MODE_ICONS[tr.mode]||'')} ${tr.leg}</div><div class="tl-bi-s">${tr.type||tr.mode} ${tr.date?'· '+fmtDate(tr.date):''} ${tr.note||''}</div></div>`).join('')}
+        </div>`:''}
+        ${(t.activities&&t.activities.length)?`<div class="tl-bl"><h4>🎯 Activities</h4>
+          ${t.activities.map(a=>`<div class="tl-bi"><div class="tl-bi-m">${a.name}</div><div class="tl-bi-s">${fmtDate(a.date)}</div></div>`).join('')}
+        </div>`:''}
+      </div>
+    </div>
+  </div>`;
+}).join('');
+
+// ============================================================================
+// STATS
+// ============================================================================
+const airlines={};
+TRIPS.forEach(t=>t.flights.forEach(f=>{if(f.airline)airlines[f.airline]=(airlines[f.airline]||0)+1;}));
+const maxDays=Math.max(...TRIPS.map(t=>daysBetween(t.date_start,t.date_end)));
+
+document.getElementById('stats-content').innerHTML = `
+  <h2 class="tl-title">Travel <span>Statistics</span></h2>
+  <div class="sg">
+    ${[['🌍',allCountries.size,'Countries'],['🏙',allCities.size,'Cities'],['🧳',TRIPS.length,'Trips'],
+       ['✈',totalFlights,'Flights'],['📅',totalDays+'+','Days'],['🏨',totalNights,'Hotel Nights']
+    ].map(([i,v,l])=>`<div class="sg-c"><div class="sg-i">${i}</div><div class="sg-v">${v}</div><div class="sg-l">${l}</div></div>`).join('')}
+  </div>
+  <h3 style="font-size:17px;font-weight:800;margin-bottom:14px;">Trip Duration</h3>
+  <div class="bar-chart">
+    ${TRIPS.map(t=>{
+      const d=daysBetween(t.date_start,t.date_end), pct=Math.min(100,(d/maxDays)*100);
+      return `<div class="bar-row"><div class="bar-lbl">${t.countries.map(c=>FLAGS[c]).join('')} ${fmtDate(t.date_start).split(',')[0]}</div><div class="bar-trk"><div class="bar-fl" style="width:${pct}%;background:${t.color}"><span>${d}d</span></div></div></div>`;
+    }).join('')}
+  </div>
+  <h3 style="font-size:17px;font-weight:800;margin-bottom:14px;">Airlines</h3>
+  <div class="cg" style="margin-bottom:32px;">
+    ${Object.entries(airlines).sort((a,b)=>b[1]-a[1]).map(([n,c])=>`<div class="cg-c"><div class="cg-f">✈</div><div class="cg-n">${n}</div><div class="cg-ct">${c} flight${c>1?'s':''}</div></div>`).join('')}
+  </div>
+  <h3 style="font-size:17px;font-weight:800;margin-bottom:14px;">Countries</h3>
+  <div class="cg">
+    ${[...allCountries].sort().map(c=>`<div class="cg-c"><div class="cg-f">${FLAGS[c]||'🌍'}</div><div class="cg-n">${c}</div><div class="cg-ct">${countryVisits[c]} trip${countryVisits[c]>1?'s':''}</div></div>`).join('')}
+  </div>
+`;
+
+// Resize handling
+window.addEventListener('resize', () => {
+  globe.width(window.innerWidth).height(window.innerHeight);
+});
+</script>
+</body>
+</html>
