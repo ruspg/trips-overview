@@ -142,6 +142,79 @@ trips:
           currency: USD
         notes: "Includes transfer, sightseeing, and river cruise"
 
+  # --- RUSSIA — December 2023 – January 2024 (Saint Petersburg, New Year) ---
+  - id: "2023-12-saint-petersburg"
+    title: "Saint Petersburg, Russia (New Year)"
+    country: Russia
+    cities: [Saint Petersburg]
+    date_start: 2023-12-27
+    date_end: 2024-01-05
+    travelers: [traveler_1, traveler_2]
+
+    flights:
+      - direction: return
+        airline: Aeroflot
+        flight_number: SU-29
+        departure:
+          airport: LED
+          city: Saint Petersburg
+          terminal: 1
+          date: 2024-01-05
+          time: "22:00 +03:00"
+        arrival:
+          airport: SVO
+          city: Moscow
+          terminal: B
+          date: 2024-01-05
+          time: "23:35 +03:00"
+        class: Economy
+        baggage: "Hand luggage only, 10 kg (55x40x25 cm)"
+
+    transport:
+      - type: train
+        name: "Sapsan"
+        train_number: 778
+        route: "Moscow → Saint Petersburg"
+        departure:
+          station: "Moscow Oktyabrskaya (Leningradsky Vokzal)"
+          date: 2023-12-27
+          time: "17:40 +03:00"
+        arrival:
+          station: "Saint Petersburg Glavny (Moskovsky Vokzal)"
+          date: 2023-12-27
+          time: "21:37 +03:00"
+        class: Business
+        car: 2
+        seat: 17
+
+  # --- BELARUS — January 2024 (Minsk) -----------------------------------------
+  - id: "2024-01-minsk"
+    title: "Minsk, Belarus"
+    country: Belarus
+    cities: [Minsk]
+    date_start: 2024-01-17
+    date_end: 2024-01-20
+    travelers: [traveler_1, traveler_2]
+
+    transport:
+      - type: train
+        route: "Moscow → Minsk"
+        departure:
+          city: Moscow
+          date: 2024-01-17
+        arrival:
+          city: Minsk
+          date: 2024-01-17
+
+      - type: train
+        route: "Minsk → Moscow"
+        departure:
+          city: Minsk
+          date: 2024-01-20
+        arrival:
+          city: Moscow
+          date: 2024-01-20
+
   # --- GRAND ASIA TRIP — April–June 2024 (Japan→Vietnam→Korea→China) -------
   - id: "2024-04-grand-asia"
     title: "Japan → Vietnam → Korea → China — Grand Asia Trip"

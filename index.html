@@ -311,6 +311,29 @@ const TRIPS = [
     color:"#f472b6",
   },
   {
+    id:"2023-12-saint-petersburg", title:"Saint Petersburg (New Year)",
+    countries:["Russia"], cities:["Saint Petersburg"],
+    date_start:"2023-12-27", date_end:"2024-01-05", status:"completed",
+    flights:[
+      {leg:"Saint Petersburg → Moscow",dir:"return",airline:"Aeroflot",flight:"SU-29",date:"2024-01-05",class:"Economy"},
+    ],
+    transport:[
+      {leg:"Moscow → Saint Petersburg",mode:"train",type:"Sapsan (Business)",date:"2023-12-27"},
+    ],
+    color:"#a78bfa",
+  },
+  {
+    id:"2024-01-minsk", title:"Minsk",
+    countries:["Belarus"], cities:["Minsk"],
+    date_start:"2024-01-17", date_end:"2024-01-20", status:"completed",
+    flights:[],
+    transport:[
+      {leg:"Moscow → Minsk",mode:"train",date:"2024-01-17"},
+      {leg:"Minsk → Moscow",mode:"train",date:"2024-01-20"},
+    ],
+    color:"#fb923c",
+  },
+  {
     id:"2024-04-grand-asia", title:"Grand Asia — Japan → Vietnam → Korea → China",
     countries:["Japan","Vietnam","South Korea","China"],
     cities:["Osaka","Kyoto","Kobe","Tokyo","Ho Chi Minh City","Nha Trang","Seoul","Hanoi","Chengdu"],
@@ -444,10 +467,11 @@ const COORDS = {
   "Astrakhan":{lat:46.3497,lng:48.0336},"Rawai, Phuket":{lat:7.7744,lng:98.3282},
   "Phi Phi Islands":{lat:7.7407,lng:98.7784},"Naha":{lat:26.2124,lng:127.6792},
   "Churaumi Aquarium":{lat:26.6944,lng:127.8778},
+  "Saint Petersburg":{lat:59.9343,lng:30.3351},"Minsk":{lat:53.9006,lng:27.559},
 };
 
-const FLAGS = {"Thailand":"🇹🇭","South Korea":"🇰🇷","China":"🇨🇳","Japan":"🇯🇵","Vietnam":"🇻🇳","Russia":"🇷🇺","Kazakhstan":"🇰🇿","Turkey":"🇹🇷"};
-const ISO_A3 = {"Thailand":"THA","South Korea":"KOR","China":"CHN","Japan":"JPN","Vietnam":"VNM","Russia":"RUS","Kazakhstan":"KAZ","Turkey":"TUR"};
+const FLAGS = {"Thailand":"🇹🇭","South Korea":"🇰🇷","China":"🇨🇳","Japan":"🇯🇵","Vietnam":"🇻🇳","Russia":"🇷🇺","Kazakhstan":"🇰🇿","Turkey":"🇹🇷","Belarus":"🇧🇾"};
+const ISO_A3 = {"Thailand":"THA","South Korea":"KOR","China":"CHN","Japan":"JPN","Vietnam":"VNM","Russia":"RUS","Kazakhstan":"KAZ","Turkey":"TUR","Belarus":"BLR"};
 const VISITED_ISO = new Set(Object.values(ISO_A3));
 
 // ============================================================================
