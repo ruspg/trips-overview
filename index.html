@@ -657,31 +657,47 @@ function buildPaths(filterTrip) {
   return paths;
 }
 
+// Label priority: 1 = always visible (major hubs), 2 = medium zoom, 3 = close zoom only
+const CITY_PRIORITY = {
+  // Priority 1 — major hubs, always shown
+  "Moscow":1, "Tokyo":1, "Bangkok":1, "Seoul":1, "Osaka":1, "Hanoi":1,
+  "Ho Chi Minh City":1, "Almaty":1, "Saint Petersburg":1, "Minsk":1,
+  "Phuket":1, "Okinawa":1, "Sapporo":1, "Astrakhan":1, "Koh Samui":1,
+  "Antalya":1, "Phu Quoc":1,
+  // Priority 2 — secondary cities, visible at medium zoom
+  "Kyoto":2, "Kobe":2, "Nha Trang":2, "Chengdu":2, "Shanghai":2,
+  "Kaş":2, "Budennovsk":2, "Mineralnye Vody":2, "Lake Toya":2,
+  // Priority 3 — POIs / micro-locations, close zoom only
+  "Naha":3, "Churaumi Aquarium":3, "Phi Phi Islands":3,
+  "Rawai, Phuket":3, "Hangzhou":3,
+};
+
 function buildPoints(filterTrip) {
   const pts = [], seen = new Set();
   const trips = filterTrip ? TRIPS.filter(t=>t.id===filterTrip) : TRIPS;
   trips.forEach(trip => {
-    // City points
     trip.cities.forEach(c => {
       if (COORDS[c] && !seen.has(c)) {
         seen.add(c);
+        const pri = CITY_PRIORITY[c] || 2;
         pts.push({
           lat: COORDS[c].lat, lng: COORDS[c].lng,
-          name: c, visits: cityVisits[c]||1,
-          color: '#fff', size: 0.25 + (cityVisits[c]||1)*0.1,
+          name: c, visits: cityVisits[c]||1, priority: pri,
+          color: '#fff',
+          size: pri === 1 ? 0.3 + (cityVisits[c]||1)*0.1 : pri === 2 ? 0.22 : 0.15,
           trips: (cityTrips[c]||[]).map(t=>({title:t.title,color:t.color,id:t.id})),
         });
       }
     });
-    // Transport endpoint points (e.g. Phi Phi, Aquarium)
     (trip.transport||[]).forEach(tr => {
       parseLeg(tr.leg).forEach(c => {
         if (COORDS[c] && !seen.has(c)) {
           seen.add(c);
+          const pri = CITY_PRIORITY[c] || 3;
           pts.push({
             lat: COORDS[c].lat, lng: COORDS[c].lng,
-            name: c, visits: 1,
-            color: '#fff', size: 0.2,
+            name: c, visits: 1, priority: pri,
+            color: '#fff', size: pri <= 2 ? 0.2 : 0.12,
             trips: [{title:trip.title,color:trip.color,id:trip.id}],
           });
         }
@@ -689,6 +705,19 @@ function buildPoints(filterTrip) {
     });
   });
   return pts;
+}
+
+// LOD: filter labels by camera altitude
+let currentAltitude = 2.2;
+let allPoints = buildPoints();
+
+function labelsForAltitude(pts, alt) {
+  // alt ~2.5 = far, ~1.0 = medium, ~0.5 = close
+  let maxPri;
+  if (alt > 1.8) maxPri = 1;       // far: only major cities
+  else if (alt > 0.9) maxPri = 2;   // medium: + secondary
+  else maxPri = 3;                   // close: everything
+  return pts.filter(p => p.priority <= maxPri);
 }
 
 // ============================================================================
@@ -730,26 +759,30 @@ const globe = Globe()
   .pathLabel(d => '')
   .onPathHover(handlePathHover)
   .onPathClick(d => { if(d) selectTrip(d.tripId); })
-  // Points (cities) — rendered below labels
-  .pointsData(buildPoints())
+  // Points (cities)
+  .pointsData(allPoints)
   .pointLat('lat')
   .pointLng('lng')
-  .pointColor('color')
-  .pointAltitude(0.006)
+  .pointColor(d => d.priority === 1 ? '#fff' : d.priority === 2 ? '#ddddf0' : '#aaaacc')
+  .pointAltitude(0.005)
   .pointRadius('size')
   .pointLabel(d => '')
   .onPointHover(handlePointHover)
   .onPointClick(d => { if(d && d.trips.length) selectTrip(d.trips[0].id); })
-  // Labels (city names) — higher altitude so they float above arcs
-  .labelsData(buildPoints())
+  // Labels (city names) — LOD filtered, higher altitude above arcs
+  .labelsData(labelsForAltitude(allPoints, currentAltitude))
   .labelLat('lat')
   .labelLng('lng')
   .labelText('name')
-  .labelSize(d => 0.5 + (d.visits||1)*0.1)
+  .labelSize(d => d.priority === 1 ? 0.55 + (d.visits||1)*0.08
+               : d.priority === 2 ? 0.4
+               : 0.3)
   .labelDotRadius(0)
-  .labelColor(() => 'rgba(220,220,240,0.9)')
+  .labelColor(d => d.priority === 1 ? 'rgba(230,230,250,0.95)'
+                 : d.priority === 2 ? 'rgba(200,200,230,0.8)'
+                 : 'rgba(180,180,210,0.65)')
   .labelResolution(3)
-  .labelAltitude(0.025)
+  .labelAltitude(0.022)
   // Polygons (countries) — vector surface
   .polygonsData([])
   .polygonCapColor(d => {
@@ -797,6 +830,39 @@ globe.pointOfView({ lat: 25, lng: 85, altitude: 2.2 }, 0);
 // Renderer
 const renderer = globe.renderer();
 renderer.setPixelRatio(window.devicePixelRatio);
+
+// LOD: poll camera altitude and update labels when zoom level changes
+let lodTimer = null;
+function checkLOD() {
+  const pov = globe.pointOfView();
+  const alt = pov.altitude;
+  if (Math.abs(alt - currentAltitude) > 0.15) {
+    currentAltitude = alt;
+    const pts = selectedTrip ? buildPoints(selectedTrip) : allPoints;
+    const filtered = labelsForAltitude(pts, alt);
+    globe.labelsData(filtered);
+    // Scale points and strokes based on zoom: closer = bigger, more detail
+    const pointScale = alt < 0.6 ? 2.0 : alt < 1.0 ? 1.5 : alt < 1.5 ? 1.2 : 1.0;
+    globe.pointRadius(d => d.size * pointScale);
+    // Thicker arcs/paths when close
+    if (!selectedTrip) {
+      const arcW = alt < 0.8 ? 0.7 : 0.45;
+      const pathW = alt < 0.8 ? 2.0 : 1.2;
+      globe.arcStroke(arcW).pathStroke(pathW);
+    }
+    // Label sizes adapt to zoom
+    globe.labelSize(d => {
+      const base = d.priority === 1 ? 0.55 + (d.visits||1)*0.08
+                 : d.priority === 2 ? 0.4 : 0.3;
+      return alt < 0.7 ? base * 0.7 : alt < 1.2 ? base * 0.85 : base;
+    });
+  }
+}
+// Use requestAnimationFrame-based polling (efficient, no setInterval jank)
+(function lodLoop() {
+  checkLOD();
+  requestAnimationFrame(lodLoop);
+})();
 
 // Set globe material for vector look — dark ocean
 const globeMaterial = globe.globeMaterial();
@@ -977,8 +1043,9 @@ function selectTrip(id) {
   if (selectedTrip === id) {
     selectedTrip = null;
     renderTripList();
+    allPoints = buildPoints();
     globe.arcsData(buildArcs()).pathsData(buildPaths())
-         .pointsData(buildPoints()).labelsData(buildPoints())
+         .pointsData(allPoints).labelsData(labelsForAltitude(allPoints, currentAltitude))
          .arcStroke(0.45).arcColor('color').pathStroke(1.2).pathColor('color');
     globe.pointOfView({ lat:25, lng:85, altitude:2.2 }, 1500);
     closeTripDetail();
@@ -986,8 +1053,10 @@ function selectTrip(id) {
   }
   selectedTrip = id;
   renderTripList();
+  const tripPts = buildPoints(id);
+  // When zooming into a trip, show all labels (no LOD filter)
   globe.arcsData(buildArcs(id)).pathsData(buildPaths(id))
-       .pointsData(buildPoints(id)).labelsData(buildPoints(id))
+       .pointsData(tripPts).labelsData(tripPts)
        .arcStroke(0.55).arcColor('color').pathStroke(1.2).pathColor('color');
 
   // Fly to trip — focus on destination cities, not Moscow (unless Russia trip)
