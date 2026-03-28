@@ -831,38 +831,43 @@ globe.pointOfView({ lat: 25, lng: 85, altitude: 2.2 }, 0);
 const renderer = globe.renderer();
 renderer.setPixelRatio(window.devicePixelRatio);
 
-// LOD: poll camera altitude and update labels when zoom level changes
-let lodTimer = null;
+// LOD: only update labels when zoom TIER changes (not on every small altitude shift)
+// This prevents Globe.gl from destroying/recreating label objects every frame
+let currentLodTier = 1; // 1=far, 2=medium, 3=close
+function altToTier(alt) {
+  if (alt > 1.8) return 1;
+  if (alt > 0.9) return 2;
+  return 3;
+}
+
+let lodDebounce = null;
 function checkLOD() {
-  const pov = globe.pointOfView();
-  const alt = pov.altitude;
-  if (Math.abs(alt - currentAltitude) > 0.15) {
+  const alt = globe.pointOfView().altitude;
+  const tier = altToTier(alt);
+
+  // Only rebuild labels when tier boundary is crossed
+  if (tier !== currentLodTier) {
+    currentLodTier = tier;
     currentAltitude = alt;
-    const pts = selectedTrip ? buildPoints(selectedTrip) : allPoints;
-    const filtered = labelsForAltitude(pts, alt);
-    globe.labelsData(filtered);
-    // Scale points and strokes based on zoom: closer = bigger, more detail
-    const pointScale = alt < 0.6 ? 2.0 : alt < 1.0 ? 1.5 : alt < 1.5 ? 1.2 : 1.0;
-    globe.pointRadius(d => d.size * pointScale);
-    // Thicker arcs/paths when close
-    if (!selectedTrip) {
-      const arcW = alt < 0.8 ? 0.7 : 0.45;
-      const pathW = alt < 0.8 ? 2.0 : 1.2;
-      globe.arcStroke(arcW).pathStroke(pathW);
-    }
-    // Label sizes adapt to zoom
-    globe.labelSize(d => {
-      const base = d.priority === 1 ? 0.55 + (d.visits||1)*0.08
-                 : d.priority === 2 ? 0.4 : 0.3;
-      return alt < 0.7 ? base * 0.7 : alt < 1.2 ? base * 0.85 : base;
-    });
+    // Debounce: wait 150ms after last tier change to avoid rapid flicker
+    clearTimeout(lodDebounce);
+    lodDebounce = setTimeout(() => {
+      if (selectedTrip) return; // trip selected = all labels shown, skip LOD
+      const filtered = labelsForAltitude(allPoints, globe.pointOfView().altitude);
+      globe.labelsData(filtered);
+    }, 150);
+  }
+
+  // Smoothly scale points/strokes (these don't cause flicker — no object recreation)
+  const pointScale = alt < 0.6 ? 2.0 : alt < 1.0 ? 1.5 : alt < 1.5 ? 1.2 : 1.0;
+  globe.pointRadius(d => d.size * pointScale);
+  if (!selectedTrip) {
+    globe.arcStroke(alt < 0.8 ? 0.7 : 0.45);
+    globe.pathStroke(alt < 0.8 ? 2.0 : 1.2);
   }
 }
-// Use requestAnimationFrame-based polling (efficient, no setInterval jank)
-(function lodLoop() {
-  checkLOD();
-  requestAnimationFrame(lodLoop);
-})();
+// Poll at 4Hz instead of every frame — sufficient for smooth LOD, much less overhead
+setInterval(checkLOD, 250);
 
 // Set globe material for vector look — dark ocean
 const globeMaterial = globe.globeMaterial();
