@@ -573,12 +573,19 @@ const TRIPS = [
     color:"#ec4899",
   },
   {
-    id:"2026-03-thailand", title:"Bangkok → Koh Samui",
-    countries:["Thailand"], cities:["Bangkok","Koh Samui"],
+    id:"2026-03-thailand", title:"Bangkok → Samui → Busan → Seoul → Tokyo",
+    countries:["Thailand","South Korea","Japan"], cities:["Bangkok","Koh Samui","Busan","Seoul","Tokyo"],
     date_start:"2026-03-01", date_end:null, status:"ongoing",
     flights:[
       {leg:"Moscow → Bangkok",dir:"outbound",airline:"Aeroflot",flight:"SU-270",date:"2026-02-28"},
       {leg:"Bangkok → Koh Samui",dir:"segment",airline:"Bangkok Airways",flight:"PG-121",date:"2026-03-03"},
+      {leg:"Koh Samui → Bangkok",dir:"segment",airline:"Bangkok Airways",flight:"PG-186",aircraft:"Airbus A319",date:"2026-04-29"},
+      {leg:"Bangkok → Busan",dir:"segment",airline:"Jeju Air",flight:"7C-2552",aircraft:"Boeing 737-800",date:"2026-04-30"},
+      {leg:"Seoul → Tokyo",dir:"segment",airline:"Japan Airlines",flight:"JL-092",aircraft:"Boeing 787-9",date:"2026-05-04"},
+      {leg:"Tokyo → Bangkok",dir:"segment",airline:"Thai Airways",flight:"TG-683",aircraft:"Boeing 777-300ER",date:"2026-05-22"},
+    ],
+    transport:[
+      {leg:"Busan → Seoul",mode:"train",type:"KTX",date:"2026-04-30",note:"High-speed rail, ~2.5h"},
     ],
     hotels:[{name:"Oakwood Suites Bangkok",city:"Bangkok",nights:2},{name:"Centara Life Lamai Resort",city:"Koh Samui",nights:6},{name:"Beachside Residence",city:"Koh Samui",nights:51}],
     color:"#34d399",
@@ -598,6 +605,7 @@ const COORDS = {
   "Phi Phi Islands":{lat:7.7407,lng:98.7784},"Naha":{lat:26.2124,lng:127.6792},
   "Churaumi Aquarium":{lat:26.6944,lng:127.8778},
   "Saint Petersburg":{lat:59.9343,lng:30.3351},"Minsk":{lat:53.9006,lng:27.559},
+  "Busan":{lat:35.1796,lng:129.0756},
 };
 
 const FLAGS = {"Thailand":"🇹🇭","South Korea":"🇰🇷","China":"🇨🇳","Japan":"🇯🇵","Vietnam":"🇻🇳","Russia":"🇷🇺","Kazakhstan":"🇰🇿","Turkey":"🇹🇷","Belarus":"🇧🇾"};
@@ -697,7 +705,7 @@ const CITY_PRIORITY = {
   "Moscow":1, "Tokyo":1, "Bangkok":1, "Seoul":1, "Osaka":1, "Hanoi":1,
   "Almaty":1, "Okinawa":1, "Sapporo":1, "Antalya":1,
   // Priority 2 — secondary: visible at medium zoom, no clutter from far
-  "Saint Petersburg":2, "Minsk":2, "Astrakhan":2,
+  "Saint Petersburg":2, "Minsk":2, "Astrakhan":2, "Busan":2,
   "Ho Chi Minh City":2, "Phuket":2, "Koh Samui":2, "Phu Quoc":2,
   "Kyoto":2, "Kobe":2, "Nha Trang":2, "Chengdu":2, "Shanghai":2,
   "Kaş":2, "Budennovsk":2, "Mineralnye Vody":2, "Lake Toya":2,

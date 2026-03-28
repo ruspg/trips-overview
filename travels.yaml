@@ -997,11 +997,11 @@ trips:
           amount: 12707
           currency: RUB
 
-  # --- THAILAND + VIETNAM — Feb–Apr 2026 (Bangkok, Samui, HCMC) — ONGOING --
+  # --- THAILAND + KOREA + JAPAN — Feb–May 2026 — ONGOING -------------------
   - id: "2026-03-thailand"
-    title: "Bangkok, Koh Samui & Ho Chi Minh City"
-    countries: [Thailand, Vietnam]
-    cities: [Bangkok, Koh Samui, Ho Chi Minh City]
+    title: "Bangkok, Koh Samui, Busan, Seoul, Tokyo"
+    countries: [Thailand, South Korea, Japan]
+    cities: [Bangkok, Koh Samui, Busan, Seoul, Tokyo]
     date_start: 2026-03-01
     status: ongoing
     travelers: [traveler_1, traveler_2]
@@ -1063,6 +1063,89 @@ trips:
           time: "15:30 +07:00"
         class: Economy
         baggage: "Personal item + carry-on (7 kg max total), no checked"
+
+      - direction: segment
+        leg: "Koh Samui → Bangkok → Busan"
+        segments:
+          - airline: Bangkok Airways
+            flight_number: PG-186
+            aircraft: Airbus A319
+            departure:
+              airport: USM
+              city: Koh Samui
+              date: 2026-04-29
+              time: "20:35 +07:00"
+            arrival:
+              airport: BKK
+              city: Bangkok
+              date: 2026-04-29
+              time: "21:50 +07:00"
+            class: Economy
+
+          - airline: Jeju Air
+            flight_number: 7C-2552
+            aircraft: Boeing 737-800
+            departure:
+              airport: BKK
+              city: Bangkok
+              date: 2026-04-30
+              time: "00:50 +07:00"
+            arrival:
+              airport: PUS
+              city: Busan
+              date: 2026-04-30
+              time: "08:30 +09:00"
+            class: Economy
+        notes: "Overnight transit in Bangkok (~3 hours)"
+
+      - direction: segment
+        leg: "Seoul → Tokyo"
+        airline: Japan Airlines
+        flight_number: JL-092
+        aircraft: Boeing 787-9
+        departure:
+          airport: GMP
+          city: Seoul
+          terminal: I
+          date: 2026-05-04
+          time: "12:05 +09:00"
+        arrival:
+          airport: HND
+          city: Tokyo
+          terminal: 3
+          date: 2026-05-04
+          time: "14:20 +09:00"
+        class: Economy
+
+      - direction: segment
+        leg: "Tokyo → Bangkok"
+        airline: Thai Airways
+        flight_number: TG-683
+        aircraft: Boeing 777-300ER
+        departure:
+          airport: HND
+          city: Tokyo
+          terminal: 3
+          date: 2026-05-22
+          time: "10:35 +09:00"
+        arrival:
+          airport: BKK
+          city: Bangkok
+          date: 2026-05-22
+          time: "15:05 +07:00"
+        class: Economy
+
+    transport:
+      - type: train
+        name: "KTX"
+        route: "Busan → Seoul"
+        departure:
+          city: Busan
+          date: 2026-04-30
+        arrival:
+          city: Seoul
+          date: 2026-04-30
+        notes: "High-speed rail, ~2.5 hours"
 
     hotels:
       - name: "Oakwood Suites Bangkok"
