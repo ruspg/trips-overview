@@ -63,6 +63,18 @@
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     z-index: 0;
   }
+  /* HTML city labels on globe */
+  .globe-label {
+    font-family: 'Inter', sans-serif;
+    white-space: nowrap;
+    text-shadow: 0 0 6px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.8);
+    transform: translate(-50%, -100%);
+    padding-bottom: 2px;
+    user-select: none;
+  }
+  .globe-label.gl-p1 { font-size: 13px; font-weight: 700; color: #e8e8ff; }
+  .globe-label.gl-p2 { font-size: 11px; font-weight: 600; color: #b8b8d8; }
+  .globe-label.gl-p3 { font-size: 10px; font-weight: 500; color: #8888a8; }
 
   /* ========== TRIP PANEL (left) ========== */
   .trip-panel {
@@ -769,20 +781,18 @@ const globe = Globe()
   .pointLabel(d => '')
   .onPointHover(handlePointHover)
   .onPointClick(d => { if(d && d.trips.length) selectTrip(d.trips[0].id); })
-  // Labels (city names) — LOD filtered, higher altitude above arcs
-  .labelsData(labelsForAltitude(allPoints, currentAltitude))
-  .labelLat('lat')
-  .labelLng('lng')
-  .labelText('name')
-  .labelSize(d => d.priority === 1 ? 0.55 + (d.visits||1)*0.08
-               : d.priority === 2 ? 0.4
-               : 0.3)
-  .labelDotRadius(0)
-  .labelColor(d => d.priority === 1 ? 'rgba(230,230,250,0.95)'
-                 : d.priority === 2 ? 'rgba(200,200,230,0.8)'
-                 : 'rgba(180,180,210,0.65)')
-  .labelResolution(3)
-  .labelAltitude(0.022)
+  // City name labels — use HTML elements for crisp rendering at any zoom
+  .htmlElementsData(labelsForAltitude(allPoints, currentAltitude))
+  .htmlLat('lat')
+  .htmlLng('lng')
+  .htmlAltitude(0.012)
+  .htmlElement(d => {
+    const el = document.createElement('div');
+    el.className = 'globe-label gl-p' + d.priority;
+    el.textContent = d.name;
+    el.style.pointerEvents = 'none';
+    return el;
+  })
   // Polygons (countries) — vector surface
   .polygonsData([])
   .polygonCapColor(d => {
@@ -854,7 +864,7 @@ function checkLOD() {
     lodDebounce = setTimeout(() => {
       if (selectedTrip) return; // trip selected = all labels shown, skip LOD
       const filtered = labelsForAltitude(allPoints, globe.pointOfView().altitude);
-      globe.labelsData(filtered);
+      globe.htmlElementsData(filtered);
     }, 150);
   }
 
@@ -1050,7 +1060,7 @@ function selectTrip(id) {
     renderTripList();
     allPoints = buildPoints();
     globe.arcsData(buildArcs()).pathsData(buildPaths())
-         .pointsData(allPoints).labelsData(labelsForAltitude(allPoints, currentAltitude))
+         .pointsData(allPoints).htmlElementsData(labelsForAltitude(allPoints, currentAltitude))
          .arcStroke(0.45).arcColor('color').pathStroke(1.2).pathColor('color');
     globe.pointOfView({ lat:25, lng:85, altitude:2.2 }, 1500);
     closeTripDetail();
@@ -1061,7 +1071,7 @@ function selectTrip(id) {
   const tripPts = buildPoints(id);
   // When zooming into a trip, show all labels (no LOD filter)
   globe.arcsData(buildArcs(id)).pathsData(buildPaths(id))
-       .pointsData(tripPts).labelsData(tripPts)
+       .pointsData(tripPts).htmlElementsData(tripPts)
        .arcStroke(0.55).arcColor('color').pathStroke(1.2).pathColor('color');
 
   // Fly to trip — focus on destination cities, not Moscow (unless Russia trip)
