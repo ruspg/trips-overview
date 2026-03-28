@@ -671,12 +671,12 @@ function buildPaths(filterTrip) {
 
 // Label priority: 1 = always visible (major hubs), 2 = medium zoom, 3 = close zoom only
 const CITY_PRIORITY = {
-  // Priority 1 — major hubs, always shown
+  // Priority 1 — major hubs, always visible even from far
   "Moscow":1, "Tokyo":1, "Bangkok":1, "Seoul":1, "Osaka":1, "Hanoi":1,
-  "Ho Chi Minh City":1, "Almaty":1, "Saint Petersburg":1, "Minsk":1,
-  "Phuket":1, "Okinawa":1, "Sapporo":1, "Astrakhan":1, "Koh Samui":1,
-  "Antalya":1, "Phu Quoc":1,
-  // Priority 2 — secondary cities, visible at medium zoom
+  "Almaty":1, "Okinawa":1, "Sapporo":1, "Antalya":1,
+  // Priority 2 — secondary: visible at medium zoom, no clutter from far
+  "Saint Petersburg":2, "Minsk":2, "Astrakhan":2,
+  "Ho Chi Minh City":2, "Phuket":2, "Koh Samui":2, "Phu Quoc":2,
   "Kyoto":2, "Kobe":2, "Nha Trang":2, "Chengdu":2, "Shanghai":2,
   "Kaş":2, "Budennovsk":2, "Mineralnye Vody":2, "Lake Toya":2,
   // Priority 3 — POIs / micro-locations, close zoom only
