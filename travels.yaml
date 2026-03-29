@@ -735,6 +735,33 @@ trips:
           amount: 2000
           currency: JPY
 
+    transport:
+      - type: car
+        route: "Naha → Churaumi Aquarium"
+        date: 2025-05-01
+        notes: "Day trip, round-trip"
+
+      - type: car
+        route: "Churaumi Aquarium → Naha"
+        date: 2025-05-01
+
+      - type: bus
+        route: "Sapporo → Lake Toya"
+        date: 2025-05-05
+
+      - type: bus
+        route: "Lake Toya → Sapporo"
+        date: 2025-05-07
+
+      - type: train
+        route: "Tokyo → Kamakura"
+        date: 2025-05-09
+        notes: "Day trip, round-trip"
+
+      - type: train
+        route: "Kamakura → Tokyo"
+        date: 2025-05-09
+
   # --- KAZAKHSTAN + TURKEY — August 2025 -----------------------------------
   - id: "2025-08-kazakhstan-turkey"
     title: "Almaty & Kaş/Antalya"

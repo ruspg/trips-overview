@@ -533,6 +533,8 @@ const TRIPS = [
       {leg:"Churaumi Aquarium → Naha",mode:"car",date:"2025-05-01"},
       {leg:"Sapporo → Lake Toya",mode:"bus",date:"2025-05-05"},
       {leg:"Lake Toya → Sapporo",mode:"bus",date:"2025-05-07"},
+      {leg:"Tokyo → Kamakura",mode:"train",date:"2025-05-09",note:"Day trip, round-trip"},
+      {leg:"Kamakura → Tokyo",mode:"train",date:"2025-05-09"},
     ],
     color:"#f59e0b",
   },
@@ -606,7 +608,7 @@ const COORDS = {
   "Phi Phi Islands":{lat:7.7407,lng:98.7784},"Naha":{lat:26.2124,lng:127.6792},
   "Churaumi Aquarium":{lat:26.6944,lng:127.8778},
   "Saint Petersburg":{lat:59.9343,lng:30.3351},"Minsk":{lat:53.9006,lng:27.559},
-  "Busan":{lat:35.1796,lng:129.0756},
+  "Busan":{lat:35.1796,lng:129.0756},"Kamakura":{lat:35.3192,lng:139.5467},
 };
 
 const FLAGS = {"Thailand":"🇹🇭","South Korea":"🇰🇷","China":"🇨🇳","Japan":"🇯🇵","Vietnam":"🇻🇳","Russia":"🇷🇺","Kazakhstan":"🇰🇿","Turkey":"🇹🇷","Belarus":"🇧🇾"};
@@ -722,7 +724,7 @@ const CITY_PRIORITY = {
   "Kyoto":2, "Kobe":2, "Nha Trang":2, "Chengdu":2, "Shanghai":2,
   "Kaş":2, "Budennovsk":2, "Mineralnye Vody":2, "Lake Toya":2,
   // Priority 3 — POIs / micro-locations, close zoom only
-  "Naha":3, "Churaumi Aquarium":3, "Phi Phi Islands":3,
+  "Naha":3, "Churaumi Aquarium":3, "Phi Phi Islands":3, "Kamakura":3,
   "Rawai, Phuket":3, "Hangzhou":3,
 };
 
