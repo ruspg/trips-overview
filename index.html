@@ -902,7 +902,7 @@ requestAnimationFrame(() => {
 
 // Renderer
 const renderer = globe.renderer();
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // cap at 1.5x — saves ~44% GPU on Retina
+renderer.setPixelRatio(window.devicePixelRatio);
 
 // LOD: only update labels when zoom TIER changes (not on every small altitude shift)
 // This prevents Globe.gl from destroying/recreating label objects every frame
@@ -914,6 +914,7 @@ function altToTier(alt) {
 }
 
 let lodDebounce = null;
+let strokeRaf = null;
 function checkLOD() {
   const alt = globe.pointOfView().altitude;
   const tier = altToTier(alt);
@@ -928,12 +929,16 @@ function checkLOD() {
     }, 150);
   }
 
-  const pointScale = alt < 0.6 ? 2.0 : alt < 1.0 ? 1.5 : alt < 1.5 ? 1.2 : 1.0;
-  globe.pointRadius(d => d.size * pointScale);
-  if (!selectedTrip) {
-    const zoomScale = alt < 0.8 ? 1.6 : 1.0;
-    globe.arcStroke(d => (d.isGlow ? 2.5 : d.isTransport ? 1.0 : 0.35) * zoomScale);
-  }
+  cancelAnimationFrame(strokeRaf);
+  strokeRaf = requestAnimationFrame(() => {
+    const a = globe.pointOfView().altitude;
+    const pointScale = a < 0.6 ? 2.0 : a < 1.0 ? 1.5 : a < 1.5 ? 1.2 : 1.0;
+    globe.pointRadius(d => d.size * pointScale);
+    if (!selectedTrip) {
+      const zoomScale = a < 0.8 ? 1.6 : 1.0;
+      globe.arcStroke(d => (d.isGlow ? 2.5 : d.isTransport ? 1.0 : 0.35) * zoomScale);
+    }
+  });
 }
 // Event-driven LOD — only fires when camera actually moves (not polling idle)
 globe.controls().addEventListener('change', checkLOD);
