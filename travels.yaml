@@ -706,11 +706,14 @@ trips:
           amount: 124921
           currency: JPY
 
-      - name: "Ramada Plaza Shanghai Pudong Airport"
+      - name: "Ramada Plaza Shanghai Pudong Airport 4*"
         city: Shanghai
+        address: "1100 Qi Hang Road, Pudong Airport, Shanghai"
         check_in: 2025-05-11
         check_out: 2025-05-12
         nights: 1
+        room_type: "Deluxe Room, 2 Twin Beds"
+        meals: "Room only"
         notes: "Transit hotel"
 
     activities:
@@ -820,9 +823,9 @@ trips:
 
   # --- VIETNAM — October–November 2025 (Hanoi, Phu Quoc, Bangkok transit) --
   - id: "2025-10-vietnam"
-    title: "Hanoi, Phu Quoc & Bangkok transit"
-    countries: [Vietnam, Thailand]
-    cities: [Hanoi, Phu Quoc, Bangkok]
+    title: "Hanoi, Phu Quoc & Bangkok transit (via Chengdu)"
+    countries: [China, Vietnam, Thailand]
+    cities: [Chengdu, Hanoi, Phu Quoc, Bangkok]
     date_start: 2025-10-30
     date_end: 2025-11-09
     travelers: [traveler_1, traveler_2]
@@ -921,6 +924,16 @@ trips:
           notes: "Total for all segments"
 
     hotels:
+      - name: "Skytel Hotel Chengdu-City Center 4*"
+        city: Chengdu
+        address: "No. 15 South Railway Station West Road, Chengdu"
+        check_in: 2025-10-31
+        check_out: 2025-11-01
+        nights: 1
+        room_type: "Executive Room"
+        meals: "Room only"
+        notes: "Transit hotel during Chengdu layover (9 hours)"
+
       - name: "Hanoi Center Silk Boutique Hotel & Travel 4*"
         city: Hanoi
         address: "16 Phố Chân Cầm, Hanoi"
