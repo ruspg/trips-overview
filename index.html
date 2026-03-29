@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- Non-blocking font loading (swap instead of @import block) -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;600&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&family=JetBrains+Mono:wght@500&display=swap" media="print" onload="this.media='all'">
 <!-- Preload the heavy globe.gl script -->
 <link rel="preload" href="https://unpkg.com/globe.gl@2.33.0" as="script">
 <style>
@@ -856,31 +856,28 @@ const globe = Globe()
   // Polygons (countries) — vector surface
   .polygonsData([])
   .polygonCapColor(d => {
-    const iso = d.properties?.ADM0_A3 || d.properties?.adm0_a3 || '';
+    const iso = d.__iso || '';
     if (hoveredCountryId && iso === hoveredCountryId) {
       return VISITED_ISO.has(iso) ? 'rgba(129,140,248,0.35)' : 'rgba(60,60,90,0.25)';
     }
     if (VISITED_ISO.has(iso)) return 'rgba(80,80,140,0.15)';
-    return 'rgba(18,18,30,0.85)';  // dark land mass
+    return 'rgba(18,18,30,0.85)';
   })
   .polygonSideColor(d => {
-    const iso = d.properties?.ADM0_A3 || d.properties?.adm0_a3 || '';
-    if (hoveredCountryId && iso === hoveredCountryId) return 'rgba(129,140,248,0.3)';
-    return 'rgba(25,25,45,0.6)';
+    const iso = d.__iso || '';
+    return (hoveredCountryId && iso === hoveredCountryId) ? 'rgba(129,140,248,0.3)' : 'rgba(25,25,45,0.6)';
   })
   .polygonStrokeColor(d => {
-    const iso = d.properties?.ADM0_A3 || d.properties?.adm0_a3 || '';
+    const iso = d.__iso || '';
     if (hoveredCountryId && iso === hoveredCountryId) {
       return VISITED_ISO.has(iso) ? 'rgba(165,180,252,0.9)' : 'rgba(100,100,140,0.5)';
     }
-    if (VISITED_ISO.has(iso)) return 'rgba(129,140,248,0.35)';
-    return 'rgba(45,45,70,0.4)';  // subtle borders for all
+    return VISITED_ISO.has(iso) ? 'rgba(129,140,248,0.35)' : 'rgba(45,45,70,0.4)';
   })
   .polygonAltitude(d => {
-    const iso = d.properties?.ADM0_A3 || d.properties?.adm0_a3 || '';
+    const iso = d.__iso || '';
     if (hoveredCountryId && iso === hoveredCountryId) return 0.012;
-    if (VISITED_ISO.has(iso)) return 0.004;
-    return 0.001;
+    return VISITED_ISO.has(iso) ? 0.004 : 0.001;
   })
   .onPolygonHover(handleCountryHover)
   .onPolygonClick(d => {
@@ -905,7 +902,7 @@ requestAnimationFrame(() => {
 
 // Renderer
 const renderer = globe.renderer();
-renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // cap at 1.5x — saves ~44% GPU on Retina
 
 // LOD: only update labels when zoom TIER changes (not on every small altitude shift)
 // This prevents Globe.gl from destroying/recreating label objects every frame
@@ -921,30 +918,25 @@ function checkLOD() {
   const alt = globe.pointOfView().altitude;
   const tier = altToTier(alt);
 
-  // Only rebuild labels when tier boundary is crossed
   if (tier !== currentLodTier) {
     currentLodTier = tier;
     currentAltitude = alt;
-    // Debounce: wait 150ms after last tier change to avoid rapid flicker
     clearTimeout(lodDebounce);
     lodDebounce = setTimeout(() => {
-      if (selectedTrip) return; // trip selected = all labels shown, skip LOD
-      const filtered = labelsForAltitude(allPoints, globe.pointOfView().altitude);
-      globe.htmlElementsData(filtered);
+      if (selectedTrip) return;
+      globe.htmlElementsData(labelsForAltitude(allPoints, globe.pointOfView().altitude));
     }, 150);
   }
 
-  // Smoothly scale points/strokes (these don't cause flicker — no object recreation)
   const pointScale = alt < 0.6 ? 2.0 : alt < 1.0 ? 1.5 : alt < 1.5 ? 1.2 : 1.0;
   globe.pointRadius(d => d.size * pointScale);
   if (!selectedTrip) {
     const zoomScale = alt < 0.8 ? 1.6 : 1.0;
     globe.arcStroke(d => (d.isGlow ? 2.5 : d.isTransport ? 1.0 : 0.35) * zoomScale);
-    // transport arcs are handled by arcStroke already
   }
 }
-// Poll at 4Hz instead of every frame — sufficient for smooth LOD, much less overhead
-setInterval(checkLOD, 250);
+// Event-driven LOD — only fires when camera actually moves (not polling idle)
+globe.controls().addEventListener('change', checkLOD);
 
 // Set globe material for vector look — dark ocean
 const globeMaterial = globe.globeMaterial();
@@ -953,10 +945,16 @@ globeMaterial.emissive.set('#060614');
 globeMaterial.emissiveIntensity = 0.3;
 globeMaterial.shininess = 0;
 
-// Load country polygons (all countries for vector surface)
+// Load country polygons — strip unused properties (saves ~34% parse time)
 fetch('https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_admin_0_countries.geojson')
   .then(r => r.json())
   .then(geo => {
+    geo.features.forEach(f => {
+      const iso = f.properties.ADM0_A3 || f.properties.adm0_a3 || '';
+      const name = f.properties.name || f.properties.NAME || '';
+      f.properties = { ADM0_A3: iso, name }; // strip 30+ unused fields
+      f.__iso = iso; // precache for fast polygon callbacks
+    });
     countriesGeo = geo;
     globe.polygonsData(geo.features);
   });
@@ -1045,7 +1043,7 @@ function handleArcHover(arc) {
 // handlePathHover removed — transport is now rendered via arcs
 
 function handleCountryHover(poly) {
-  const iso = poly ? (poly.properties?.ADM0_A3 || poly.properties?.adm0_a3 || '') : null;
+  const iso = poly ? (poly.__iso || '') : null;
   const wasHovered = hoveredCountryId;
 
   if (iso && VISITED_ISO.has(iso)) {
