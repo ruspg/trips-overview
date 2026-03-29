@@ -1148,6 +1148,24 @@ trips:
           time: "15:05 +07:00"
         class: Economy
 
+      - direction: return
+        leg: "Bangkok → Moscow"
+        airline: Aeroflot
+        flight_number: SU-273
+        departure:
+          airport: BKK
+          city: Bangkok
+          date: 2026-05-25
+          time: "13:20 +07:00"
+        arrival:
+          airport: SVO
+          city: Moscow
+          terminal: C
+          date: 2026-05-25
+          time: "19:00 +03:00"
+        class: Economy
+        seat: 26G
+
     transport:
       - type: train
         name: "KTX-Cheongryong 182"
