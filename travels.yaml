@@ -1137,15 +1137,18 @@ trips:
 
     transport:
       - type: train
-        name: "KTX"
+        name: "KTX-Cheongryong 182"
         route: "Busan → Seoul"
         departure:
           city: Busan
-          date: 2026-04-30
+          date: 2026-05-01
+          time: "19:12 +09:00"
         arrival:
           city: Seoul
-          date: 2026-04-30
-        notes: "High-speed rail, ~2.5 hours"
+          date: 2026-05-01
+          time: "21:35 +09:00"
+        class: First Class
+        notes: "High-speed rail, 2h 23min"
 
     hotels:
       - name: "Oakwood Suites Bangkok"
