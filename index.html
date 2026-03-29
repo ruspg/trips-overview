@@ -677,7 +677,11 @@ function buildArcs(filterTrip) {
   });
   // Merge ground/water transport as low-altitude arcs
   arcs.push(...buildTransportArcs(filterTrip));
-  return arcs;
+  // Add glow copies — rendered thicker & darker behind the bright lines
+  const glowArcs = arcs.filter(a => !a.isTransport).map(a => ({
+    ...a, isGlow: true,
+  }));
+  return [...glowArcs, ...arcs]; // glow first (behind), then bright on top
 }
 
 // Ground/water transport — merged into arcs with isTransport flag
@@ -798,15 +802,21 @@ const globe = Globe()
   .showAtmosphere(true)
   .atmosphereColor('#4455dd')
   .atmosphereAltitude(0.15)
-  // Arcs — flights (elevated, semi-transparent) + transport (surface-hugging, dotted)
+  // Arcs — thin bright lines with dark glow behind
   .arcsData(buildArcs())
-  .arcColor(d => d.isTransport
-    ? [d.color, lightenColor(d.color, 50)]                    // transport: solid bright
-    : [d.color + 'bb', lightenColor(d.color, 40) + '90'])     // flights: semi-transparent
-  .arcStroke(d => d.isTransport ? 1.2 : 0.5)
-  .arcDashLength(d => d.isTransport ? 0.15 : 0.9)
-  .arcDashGap(d => d.isTransport ? 0.08 : 0.15)
-  .arcDashAnimateTime(d => d.isTransport ? 2000 : 3000)
+  .arcColor(d => {
+    if (d.isGlow) return [d.color + '18', d.color + '08'];    // glow: dark translucent halo
+    if (d.isTransport) return [d.color, lightenColor(d.color, 60)];
+    return [lightenColor(d.color, 30), d.color];               // bright vivid gradient
+  })
+  .arcStroke(d => {
+    if (d.isGlow) return 2.5;                                  // glow: thick backdrop
+    if (d.isTransport) return 1.0;
+    return 0.35;                                               // main: thin crisp line
+  })
+  .arcDashLength(d => d.isGlow ? 1 : d.isTransport ? 0.15 : 0.9)
+  .arcDashGap(d => d.isGlow ? 0 : d.isTransport ? 0.08 : 0.15)
+  .arcDashAnimateTime(d => d.isGlow ? 0 : d.isTransport ? 2000 : 3000)
   .arcAltitude(d => {
     if (d.isTransport) return 0.015; // low arc, visible but close to surface
     const dlat = Math.abs(d.startLat - d.endLat);
@@ -926,7 +936,8 @@ function checkLOD() {
   const pointScale = alt < 0.6 ? 2.0 : alt < 1.0 ? 1.5 : alt < 1.5 ? 1.2 : 1.0;
   globe.pointRadius(d => d.size * pointScale);
   if (!selectedTrip) {
-    globe.arcStroke(alt < 0.8 ? 0.85 : 0.55);
+    const zoomScale = alt < 0.8 ? 1.6 : 1.0;
+    globe.arcStroke(d => (d.isGlow ? 2.5 : d.isTransport ? 1.0 : 0.35) * zoomScale);
     // transport arcs are handled by arcStroke already
   }
 }
@@ -982,17 +993,22 @@ function handlePointHover(point) {
   `);
 }
 
-const defaultArcColor = d => d.isTransport
-  ? [d.color, lightenColor(d.color, 50)]
-  : [d.color + 'bb', lightenColor(d.color, 40) + '90'];
-const dimArcColor = (d, ref) => d === ref
-  ? [ref.color, lightenColor(ref.color, 60)]
-  : [ref.color + '15', ref.color + '08'];
+const defaultArcColor = d => {
+  if (d.isGlow) return [d.color + '18', d.color + '08'];
+  if (d.isTransport) return [d.color, lightenColor(d.color, 60)];
+  return [lightenColor(d.color, 30), d.color];
+};
+const defaultArcStroke = d => d.isGlow ? 2.5 : d.isTransport ? 1.0 : 0.35;
+const dimArcColor = (d, ref) => {
+  if (d.isGlow) return d.tripId === ref.tripId ? [d.color + '25', d.color + '10'] : [d.color + '05', d.color + '02'];
+  if (d === ref) return [lightenColor(ref.color, 50), ref.color];
+  return [ref.color + '10', ref.color + '05'];
+};
 
 function handleArcHover(arc) {
   if (!arc) {
     hideTooltip();
-    globe.arcStroke(d => d.isTransport ? 1.2 : 0.5).arcColor(defaultArcColor);
+    globe.arcStroke(defaultArcStroke).arcColor(defaultArcColor);
     return;
   }
   if (arc.isTransport) {
@@ -1016,7 +1032,11 @@ function handleArcHover(arc) {
     `);
   }
   globe
-    .arcStroke(d => d === arc ? (d.isTransport ? 2.5 : 1.6) : 0.1)
+    .arcStroke(d => {
+      if (d.isGlow) return d.tripId === arc.tripId ? 3.5 : 0.5;
+      if (d === arc) return d.isTransport ? 2.0 : 0.7;
+      return 0.05;
+    })
     .arcColor(d => dimArcColor(d, arc));
 }
 
@@ -1086,14 +1106,17 @@ function renderTripList() {
     el.addEventListener('mouseenter', () => {
       if (!selectedTrip) {
         const tid = el.dataset.id;
-        globe.arcStroke(d => d.tripId===tid ? 1.0 : 0.08)
-             .arcColor(d => d.tripId===tid ? [d.color, lightenColor(d.color,50)] : [d.color+'10', d.color+'05'])
+        globe.arcStroke(d => {
+          if (d.tripId===tid) return d.isGlow ? 3.5 : d.isTransport ? 1.5 : 0.6;
+          return d.isGlow ? 0.3 : 0.03;
+        })
+        .arcColor(d => d.tripId===tid ? defaultArcColor(d) : [d.color+'08', d.color+'03'])
              ;
       }
     });
     el.addEventListener('mouseleave', () => {
       if (!selectedTrip) {
-        globe.arcStroke(d => d.isTransport ? 1.2 : 0.5).arcColor(defaultArcColor);
+        globe.arcStroke(defaultArcStroke).arcColor(defaultArcColor);
       }
     });
   });
@@ -1113,7 +1136,7 @@ function selectTrip(id) {
     allPoints = buildPoints();
     globe.arcsData(buildArcs())
          .pointsData(allPoints).htmlElementsData(labelsForAltitude(allPoints, currentAltitude))
-         .arcStroke(d => d.isTransport ? 1.2 : 0.5).arcColor(defaultArcColor);
+         .arcStroke(defaultArcStroke).arcColor(defaultArcColor);
     globe.pointOfView({ lat:25, lng:85, altitude:2.2 }, 1500);
     closeTripDetail();
     return;
@@ -1124,7 +1147,7 @@ function selectTrip(id) {
   // When zooming into a trip, show all labels (no LOD filter)
   globe.arcsData(buildArcs(id))
        .pointsData(tripPts).htmlElementsData(tripPts)
-       .arcStroke(d => d.isTransport ? 0.8 : 0.55).arcColor(defaultArcColor);
+       .arcStroke(defaultArcStroke).arcColor(defaultArcColor);
 
   // Fly to trip — focus on destination cities, not Moscow (unless Russia trip)
   const trip = TRIPS.find(t=>t.id===id);
