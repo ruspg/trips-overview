@@ -803,12 +803,12 @@ const globe = Globe()
   .arcColor(d => d.isTransport
     ? [d.color, lightenColor(d.color, 50)]                    // transport: solid bright
     : [d.color + 'bb', lightenColor(d.color, 40) + '90'])     // flights: semi-transparent
-  .arcStroke(d => d.isTransport ? 0.8 : 0.5)
+  .arcStroke(d => d.isTransport ? 1.2 : 0.5)
   .arcDashLength(d => d.isTransport ? 0.15 : 0.9)
   .arcDashGap(d => d.isTransport ? 0.08 : 0.15)
   .arcDashAnimateTime(d => d.isTransport ? 2000 : 3000)
   .arcAltitude(d => {
-    if (d.isTransport) return 0.002; // hug the surface
+    if (d.isTransport) return 0.015; // low arc, visible but close to surface
     const dlat = Math.abs(d.startLat - d.endLat);
     const dlng = Math.abs(d.startLng - d.endLng);
     const dist = Math.sqrt(dlat*dlat + dlng*dlng);
@@ -992,7 +992,7 @@ const dimArcColor = (d, ref) => d === ref
 function handleArcHover(arc) {
   if (!arc) {
     hideTooltip();
-    globe.arcStroke(d => d.isTransport ? 0.8 : 0.5).arcColor(defaultArcColor);
+    globe.arcStroke(d => d.isTransport ? 1.2 : 0.5).arcColor(defaultArcColor);
     return;
   }
   if (arc.isTransport) {
@@ -1093,7 +1093,7 @@ function renderTripList() {
     });
     el.addEventListener('mouseleave', () => {
       if (!selectedTrip) {
-        globe.arcStroke(d => d.isTransport ? 0.8 : 0.5).arcColor(defaultArcColor);
+        globe.arcStroke(d => d.isTransport ? 1.2 : 0.5).arcColor(defaultArcColor);
       }
     });
   });
@@ -1113,7 +1113,7 @@ function selectTrip(id) {
     allPoints = buildPoints();
     globe.arcsData(buildArcs())
          .pointsData(allPoints).htmlElementsData(labelsForAltitude(allPoints, currentAltitude))
-         .arcStroke(d => d.isTransport ? 0.8 : 0.5).arcColor(defaultArcColor);
+         .arcStroke(d => d.isTransport ? 1.2 : 0.5).arcColor(defaultArcColor);
     globe.pointOfView({ lat:25, lng:85, altitude:2.2 }, 1500);
     closeTripDetail();
     return;
