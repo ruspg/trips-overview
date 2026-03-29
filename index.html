@@ -689,7 +689,7 @@ function buildPaths(filterTrip) {
       if (coords.length >= 2) {
         paths.push({
           coords: coords.map(c => ({lat:c.lat, lng:c.lng})),
-          color: trip.color + 'aa',
+          color: trip.color,
           tripId: trip.id, tripTitle: trip.title,
           label: tr.leg, mode: tr.mode, type: tr.type||'',
           date: tr.date||'', note: tr.note||'',
@@ -791,10 +791,10 @@ const globe = Globe()
   .showAtmosphere(true)
   .atmosphereColor('#4455dd')
   .atmosphereAltitude(0.15)
-  // Arcs (flights) — gradient lines with gentle flowing animation
+  // Arcs (flights) — semi-transparent gradient with flowing animation
   .arcsData(buildArcs())
-  .arcColor(d => [d.color, lightenColor(d.color, 40)])  // gradient: trip color → lighter
-  .arcStroke(0.55)
+  .arcColor(d => [d.color + 'bb', lightenColor(d.color, 40) + '90'])  // gradient with transparency
+  .arcStroke(0.5)
   .arcDashLength(0.9)
   .arcDashGap(0.15)
   .arcDashAnimateTime(3000) // smooth directional flow
@@ -815,11 +815,14 @@ const globe = Globe()
   .pathPoints('coords')
   .pathPointLat('lat')
   .pathPointLng('lng')
-  .pathColor(d => [d.color, lightenColor(d.color.replace('aa',''), 30) + 'cc'])
-  .pathStroke(1.5)
-  .pathDashLength(0.2)
-  .pathDashGap(0.1)
-  .pathDashAnimateTime(5000)
+  .pathColor(d => {
+    const base = d.color.replace(/[a-f0-9]{2}$/i, '').replace(/#([0-9a-f]{6}).*/i, '#$1');
+    return [base, lightenColor(base, 50)];
+  })
+  .pathStroke(3)
+  .pathDashLength(0.08)
+  .pathDashGap(0.04)
+  .pathDashAnimateTime(4000)
   .pathLabel(d => '')
   .onPathHover(handlePathHover)
   .onPathClick(d => { if(d) selectTrip(d.tripId); })
@@ -987,7 +990,7 @@ function handlePointHover(point) {
   `);
 }
 
-const defaultArcColor = d => [d.color, lightenColor(d.color, 40)];
+const defaultArcColor = d => [d.color + 'bb', lightenColor(d.color, 40) + '90'];
 const dimArcColor = (d, ref) => d === ref
   ? [ref.color, lightenColor(ref.color, 60)]
   : [ref.color + '15', ref.color + '08'];
@@ -1031,7 +1034,7 @@ function handlePathHover(path) {
   `);
   globe
     .pathStroke(d => d === path ? 2.5 : 0.6)
-    .pathColor(d => d === path ? path.color : path.color.replace('aa','30'));
+    .pathColor(d => d === path ? path.color : path.color + '30');
 }
 
 function handleCountryHover(poly) {
@@ -1101,7 +1104,7 @@ function renderTripList() {
         globe.arcStroke(d => d.tripId===tid ? 1.0 : 0.08)
              .arcColor(d => d.tripId===tid ? [d.color, lightenColor(d.color,50)] : [d.color+'10', d.color+'05'])
              .pathStroke(d => d.tripId===tid ? 2.5 : 0.3)
-             .pathColor(d => d.tripId===tid ? d.color : d.color.replace('aa','10'));
+             .pathColor(d => d.tripId===tid ? d.color : d.color + '10');
       }
     });
     el.addEventListener('mouseleave', () => {
