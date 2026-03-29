@@ -669,35 +669,42 @@ function buildArcs(filterTrip) {
             label: fl.leg, airline: fl.airline||'', flight: fl.flight||'',
             aircraft: fl.aircraft||'', date: fl.date||'', fclass: fl.class||'',
             tripTitle: trip.title, isTransport: false,
-            seq: fi, // sequence index for animation offset
+            seq: fi,
+          });
+        }
+      }
+    });
+  });
+  // Merge ground/water transport as low-altitude arcs
+  arcs.push(...buildTransportArcs(filterTrip));
+  return arcs;
+}
+
+// Ground/water transport — merged into arcs with isTransport flag
+function buildTransportArcs(filterTrip) {
+  const arcs = [];
+  const trips = filterTrip ? TRIPS.filter(t=>t.id===filterTrip) : TRIPS;
+  trips.forEach(trip => {
+    (trip.transport||[]).forEach((tr, ti) => {
+      const cities = parseLeg(tr.leg);
+      for (let i=0; i<cities.length-1; i++) {
+        const from=COORDS[cities[i]], to=COORDS[cities[i+1]];
+        if (from && to) {
+          arcs.push({
+            startLat:from.lat, startLng:from.lng,
+            endLat:to.lat, endLng:to.lng,
+            color: trip.color, tripId: trip.id,
+            label: tr.leg, airline: '', flight: '',
+            aircraft: '', date: tr.date||'', fclass: '',
+            tripTitle: trip.title, isTransport: true,
+            mode: tr.mode, transportType: tr.type||'',
+            note: tr.note||'', seq: 100+ti,
           });
         }
       }
     });
   });
   return arcs;
-}
-
-// Surface paths for ground/water transport
-function buildPaths(filterTrip) {
-  const paths = [];
-  const trips = filterTrip ? TRIPS.filter(t=>t.id===filterTrip) : TRIPS;
-  trips.forEach(trip => {
-    (trip.transport||[]).forEach(tr => {
-      const cities = parseLeg(tr.leg);
-      const coords = cities.map(c=>COORDS[c]).filter(Boolean);
-      if (coords.length >= 2) {
-        paths.push({
-          coords: coords.map(c => ({lat:c.lat, lng:c.lng})),
-          color: trip.color,
-          tripId: trip.id, tripTitle: trip.title,
-          label: tr.leg, mode: tr.mode, type: tr.type||'',
-          date: tr.date||'', note: tr.note||'',
-        });
-      }
-    });
-  });
-  return paths;
 }
 
 // Label priority: 1 = always visible (major hubs), 2 = medium zoom, 3 = close zoom only
@@ -791,15 +798,17 @@ const globe = Globe()
   .showAtmosphere(true)
   .atmosphereColor('#4455dd')
   .atmosphereAltitude(0.15)
-  // Arcs (flights) — semi-transparent gradient with flowing animation
+  // Arcs — flights (elevated, semi-transparent) + transport (surface-hugging, dotted)
   .arcsData(buildArcs())
-  .arcColor(d => [d.color + 'bb', lightenColor(d.color, 40) + '90'])  // gradient with transparency
-  .arcStroke(0.5)
-  .arcDashLength(0.9)
-  .arcDashGap(0.15)
-  .arcDashAnimateTime(3000) // smooth directional flow
+  .arcColor(d => d.isTransport
+    ? [d.color, lightenColor(d.color, 50)]                    // transport: solid bright
+    : [d.color + 'bb', lightenColor(d.color, 40) + '90'])     // flights: semi-transparent
+  .arcStroke(d => d.isTransport ? 0.8 : 0.5)
+  .arcDashLength(d => d.isTransport ? 0.15 : 0.9)
+  .arcDashGap(d => d.isTransport ? 0.08 : 0.15)
+  .arcDashAnimateTime(d => d.isTransport ? 2000 : 3000)
   .arcAltitude(d => {
-    // Higher arcs for longer distances, graceful curve
+    if (d.isTransport) return 0.002; // hug the surface
     const dlat = Math.abs(d.startLat - d.endLat);
     const dlng = Math.abs(d.startLng - d.endLng);
     const dist = Math.sqrt(dlat*dlat + dlng*dlng);
@@ -810,23 +819,6 @@ const globe = Globe()
   .onArcHover(handleArcHover)
   .onArcClick(d => { if(d) selectTrip(d.tripId); })
   .arcsTransitionDuration(800)
-  // Surface paths (ground/water transport) — thin dotted, hugging surface
-  .pathsData(buildPaths())
-  .pathPoints('coords')
-  .pathPointLat('lat')
-  .pathPointLng('lng')
-  .pathColor(d => {
-    const base = d.color.replace(/[a-f0-9]{2}$/i, '').replace(/#([0-9a-f]{6}).*/i, '#$1');
-    return [base, lightenColor(base, 50)];
-  })
-  .pathStroke(3)
-  .pathDashLength(0.08)
-  .pathDashGap(0.04)
-  .pathDashAnimateTime(4000)
-  .pathLabel(d => '')
-  .onPathHover(handlePathHover)
-  .onPathClick(d => { if(d) selectTrip(d.tripId); })
-  .pathTransitionDuration(800)
   // Points (cities)
   .pointsData(allPoints)
   .pointLat('lat')
@@ -935,7 +927,7 @@ function checkLOD() {
   globe.pointRadius(d => d.size * pointScale);
   if (!selectedTrip) {
     globe.arcStroke(alt < 0.8 ? 0.85 : 0.55);
-    globe.pathStroke(alt < 0.8 ? 2.5 : 1.5);
+    // transport arcs are handled by arcStroke already
   }
 }
 // Poll at 4Hz instead of every frame — sufficient for smooth LOD, much less overhead
@@ -990,7 +982,9 @@ function handlePointHover(point) {
   `);
 }
 
-const defaultArcColor = d => [d.color + 'bb', lightenColor(d.color, 40) + '90'];
+const defaultArcColor = d => d.isTransport
+  ? [d.color, lightenColor(d.color, 50)]
+  : [d.color + 'bb', lightenColor(d.color, 40) + '90'];
 const dimArcColor = (d, ref) => d === ref
   ? [ref.color, lightenColor(ref.color, 60)]
   : [ref.color + '15', ref.color + '08'];
@@ -998,44 +992,35 @@ const dimArcColor = (d, ref) => d === ref
 function handleArcHover(arc) {
   if (!arc) {
     hideTooltip();
-    globe.arcStroke(0.55).arcColor(defaultArcColor);
+    globe.arcStroke(d => d.isTransport ? 0.8 : 0.5).arcColor(defaultArcColor);
     return;
   }
-  showTooltip(`
-    <div class="tt-title" style="color:${arc.color}">✈ ${arc.label}</div>
-    <div class="tt-sub">
-      ${arc.airline ? '<strong>'+arc.airline+'</strong>' : ''}
-      ${arc.flight ? ' · '+arc.flight : ''}
-      ${arc.aircraft ? ' · '+arc.aircraft : ''}
-    </div>
-    ${arc.date ? `<div class="tt-sub">${fmtDate(arc.date)}${arc.fclass?' · '+arc.fclass:''}</div>` : ''}
-    <div class="tt-sub" style="margin-top:4px;opacity:0.5">${arc.tripTitle}</div>
-  `);
+  if (arc.isTransport) {
+    const icon = MODE_ICONS[arc.mode] || '🚗';
+    showTooltip(`
+      <div class="tt-title" style="color:${arc.color}">${icon} ${arc.label}</div>
+      <div class="tt-sub">${arc.transportType || arc.mode}${arc.date ? ' · '+fmtDate(arc.date) : ''}</div>
+      ${arc.note ? `<div class="tt-sub" style="opacity:0.6">${arc.note}</div>` : ''}
+      <div class="tt-sub" style="margin-top:4px;opacity:0.5">${arc.tripTitle}</div>
+    `);
+  } else {
+    showTooltip(`
+      <div class="tt-title" style="color:${arc.color}">✈ ${arc.label}</div>
+      <div class="tt-sub">
+        ${arc.airline ? '<strong>'+arc.airline+'</strong>' : ''}
+        ${arc.flight ? ' · '+arc.flight : ''}
+        ${arc.aircraft ? ' · '+arc.aircraft : ''}
+      </div>
+      ${arc.date ? `<div class="tt-sub">${fmtDate(arc.date)}${arc.fclass?' · '+arc.fclass:''}</div>` : ''}
+      <div class="tt-sub" style="margin-top:4px;opacity:0.5">${arc.tripTitle}</div>
+    `);
+  }
   globe
-    .arcStroke(d => d === arc ? 1.6 : 0.15)
+    .arcStroke(d => d === arc ? (d.isTransport ? 2.5 : 1.6) : 0.1)
     .arcColor(d => dimArcColor(d, arc));
 }
 
-function handlePathHover(path) {
-  if (!path) {
-    hideTooltip();
-    globe.pathStroke(1.2).pathColor('color');
-    return;
-  }
-  const icon = MODE_ICONS[path.mode] || '🚗';
-  showTooltip(`
-    <div class="tt-title" style="color:${path.color}">${icon} ${path.label}</div>
-    <div class="tt-sub">
-      ${path.type ? '<strong>'+path.type+'</strong>' : path.mode}
-      ${path.date ? ' · '+fmtDate(path.date) : ''}
-    </div>
-    ${path.note ? `<div class="tt-sub" style="opacity:0.6">${path.note}</div>` : ''}
-    <div class="tt-sub" style="margin-top:4px;opacity:0.5">${path.tripTitle}</div>
-  `);
-  globe
-    .pathStroke(d => d === path ? 2.5 : 0.6)
-    .pathColor(d => d === path ? path.color : path.color + '30');
-}
+// handlePathHover removed — transport is now rendered via arcs
 
 function handleCountryHover(poly) {
   const iso = poly ? (poly.properties?.ADM0_A3 || poly.properties?.adm0_a3 || '') : null;
@@ -1103,13 +1088,12 @@ function renderTripList() {
         const tid = el.dataset.id;
         globe.arcStroke(d => d.tripId===tid ? 1.0 : 0.08)
              .arcColor(d => d.tripId===tid ? [d.color, lightenColor(d.color,50)] : [d.color+'10', d.color+'05'])
-             .pathStroke(d => d.tripId===tid ? 2.5 : 0.3)
-             .pathColor(d => d.tripId===tid ? d.color : d.color + '10');
+             ;
       }
     });
     el.addEventListener('mouseleave', () => {
       if (!selectedTrip) {
-        globe.arcStroke(0.55).arcColor(defaultArcColor).pathStroke(1.5).pathColor('color');
+        globe.arcStroke(d => d.isTransport ? 0.8 : 0.5).arcColor(defaultArcColor);
       }
     });
   });
@@ -1127,9 +1111,9 @@ function selectTrip(id) {
     selectedTrip = null;
     renderTripList();
     allPoints = buildPoints();
-    globe.arcsData(buildArcs()).pathsData(buildPaths())
+    globe.arcsData(buildArcs())
          .pointsData(allPoints).htmlElementsData(labelsForAltitude(allPoints, currentAltitude))
-         .arcStroke(0.55).arcColor(defaultArcColor).pathStroke(1.5).pathColor('color');
+         .arcStroke(d => d.isTransport ? 0.8 : 0.5).arcColor(defaultArcColor);
     globe.pointOfView({ lat:25, lng:85, altitude:2.2 }, 1500);
     closeTripDetail();
     return;
@@ -1138,9 +1122,9 @@ function selectTrip(id) {
   renderTripList();
   const tripPts = buildPoints(id);
   // When zooming into a trip, show all labels (no LOD filter)
-  globe.arcsData(buildArcs(id)).pathsData(buildPaths(id))
+  globe.arcsData(buildArcs(id))
        .pointsData(tripPts).htmlElementsData(tripPts)
-       .arcStroke(0.65).arcColor(defaultArcColor).pathStroke(1.5).pathColor('color');
+       .arcStroke(d => d.isTransport ? 0.8 : 0.55).arcColor(defaultArcColor);
 
   // Fly to trip — focus on destination cities, not Moscow (unless Russia trip)
   const trip = TRIPS.find(t=>t.id===id);
